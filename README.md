@@ -1,4 +1,4 @@
-# Technology PDK layer for tech_sky130B
+# Technology PDK layer for tech_sky130A
 
 This is not a full PDK, it's a small layer of customization on top of the
 existing PDK.

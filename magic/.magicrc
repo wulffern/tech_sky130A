@@ -1,4 +1,4 @@
-source $env(PDK_ROOT)/sky130B/libs.tech/magic/sky130B.magicrc
+source $env(PDK_ROOT)/sky130A/libs.tech/magic/sky130A.magicrc
 
 #- Custom macros
 

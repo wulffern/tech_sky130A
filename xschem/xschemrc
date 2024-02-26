@@ -1,6 +1,6 @@
 
 
-source $env(PDK_ROOT)/sky130B/libs.tech/xschem/xschemrc
+source $env(PDK_ROOT)/sky130A/libs.tech/xschem/xschemrc
 
 #### Flush any previous definition
 set XSCHEM_LIBRARY_PATH {}
