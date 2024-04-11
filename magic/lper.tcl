@@ -1,11 +1,8 @@
 #set VDD AVDD
 #set GND AVSS
-#set SUB 0
+set SUB 0
 
 load {PATH}/{CELL}.mag
-
-
-
 
 flatten {CELL}_flat
 load {CELL}_flat
@@ -13,9 +10,9 @@ load {CELL}_flat
 select top cell
 
 extract path extfiles
-extract all
 ext2sim labels on
-ext2sim
+extract all
+ext2sim -p extfiles
 extresist tolerance 10
 extresist
 ext2spice lvs

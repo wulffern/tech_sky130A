@@ -5,16 +5,16 @@
 load {PATH}/{CELL}.mag
 #writeall force
 
+#flatten {CELL}_flat
+#load {CELL}_flat
+
 select top cell
 
-extract all
-flatten {CELL}_flat
-load {CELL}_flat
-
+extract path extfiles
 extract all
 
 ext2sim labels on
-ext2sim
+ext2sim -p extfiles
 
 ext2spice lvs
 ext2spice format ngspice
@@ -23,5 +23,5 @@ ext2spice resistor off
 #ext2spice subcircuits off
 #ext2spice merge conservative
 ext2spice cthresh 0.1
-ext2spice -o lpe/{CELL}_lpe.spi
+ext2spice -p extfiles -o lpe/{CELL}_lpe.spi
 quit

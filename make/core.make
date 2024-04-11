@@ -30,7 +30,7 @@ PRCELL = ${PREFIX}${CELL}
 
 PDKPATH=${PDK_ROOT}/sky130A
 
-.PHONY: drc lvs lpe gds cdl xsch
+.PHONY: drc lvs lpe gds cdl xsch ant
 
 
 #----------------------------------------------------------------------------
@@ -185,13 +185,28 @@ lvs:
 #--------------------------------------------------------------------------------------
 drc:
 	@test -d drc || mkdir drc
-	@${ECHO} "load ${NCELL}.mag\nlogcommands drc/${PRCELL}_drc.log\nset b [view bbox]\nbox values [lindex \$$b 0] [lindex \$$b 1] [lindex \$$b 2] [lindex \$$b 3]\ndrc catchup\ndrc why\ndrc count total\nquit\n" > drc/${PRCELL}_drc.tcl
+	@${ECHO} "load ${NCELL}.mag\nlogcommands drc/${PRCELL}_drc.log\nset b [view bbox]\nbox values [lindex \$$b 0] [lindex \$$b 1] [lindex \$$b 2] [lindex \$$b 3]\nexpand\nexpand\ndrc full\ndrc catchup\ndrc why\ndrc count total\nquit\n" > drc/${PRCELL}_drc.tcl
 	@magic -noconsole -dnull drc/${PRCELL}_drc.tcl > drc/${PRCELL}_drc.log ${RDIR}
 	@tail -n 1 drc/${PRCELL}_drc.log| perl -ne "\$$exit = 0;use Term::ANSIColor;print(sprintf(\"%-40s\t[ \",${PRCELL}));if(m/:\s+0\n/ig){print(color('green').'DRC OK  '.color('reset'));}else{print(color('red').'DRC FAIL'.color('reset'));\$$exit = 1;};print(\" ]\n\");exit \$$exit;" || tail -n 10 drc/${PRCELL}_drc.log
 
 kdrc:
 	klayout -b -r ${PDK_ROOT}/sky130A/libs.tech/klayout/drc/sky130A_mr.drc  -rd input=gds/${PRCELL}.gds -rd topcell=${PRCELL} -rd report=../drc/${PRCELL}_drc.xml -rd thr=8 -rd feol=true -rd beol=true -rd offgrid=true  >& drc/${PRCELL}_kdrc.log
 
+#--------------------------------------------------------------------------------------
+#- Antenna
+##--------------------------------------------------------------------------------------
+
+ant:
+	@test -d ant || mkdir ant
+	cat ../tech/magic/antenna.tcl |perl -pe 's#{PATH}#${LMAG}#ig;s#{CELL}#${PRCELL}#ig;'  > ant/${PRCELL}_ant.tcl
+	@magic -noconsole -dnull ant/${PRCELL}_ant.tcl > ant/${PRCELL}_ant.log ${RDIR}
+	../tech/script/checkant ant/${PRCELL}_ant.log
+
+antf:
+	@test -d ant || mkdir ant
+	cat ../tech/magic/antenna_flat.tcl |perl -pe 's#{PATH}#${LMAG}#ig;s#{CELL}#${PRCELL}#ig;'  > ant/${PRCELL}_antf.tcl
+	@magic -noconsole -dnull ant/${PRCELL}_antf.tcl > ant/${PRCELL}_antf.log ${RDIR}
+	../tech/script/checkant ant/${PRCELL}_antf.log
 
 #--------------------------------------------------------------------------------------
 #- Run parasitic extraction
