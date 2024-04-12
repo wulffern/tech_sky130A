@@ -1,9 +1,11 @@
-set VDD AVDD
-set GND AVSS
-set SUB BULKN
+#set VDD AVDD
+#set GND AVSS
+set SUB 0
+set OPATH lvs/ext
 load {PATH}/{CELL}.mag
-#writeall force
+
+extract path ${OPATH}
 extract all
 ext2spice lvs
-ext2spice -o lvs/{CELL}.spi
+ext2spice -p ${OPATH} -o lvs/{CELL}.spi
 quit
