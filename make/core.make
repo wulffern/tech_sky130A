@@ -164,14 +164,14 @@ xlvs: cdl
 	cat ../tech/magic/lvs.tcl|perl -pe 's#{PATH}#${LMAG}#ig;s#{CELL}#${PRCELL}#ig;' > lvs/${PRCELL}_spi.tcl
 	magic -noconsole -dnull lvs/${PRCELL}_spi.tcl > lvs/${PRCELL}_spi.log ${RDIR}
 	netgen -batch lvs "lvs/${PRCELL}.spi ${PRCELL}"  "cdl/${PRCELL}.spice ${PRCELL}" ${PDKPATH}/libs.tech/netgen/sky130A_setup.tcl lvs/${PRCELL}_lvs.log > lvs/${PRCELL}_netgen_lvs.log
-	cat lvs/${PRCELL}_lvs.log | ../tech/script/checklvs ${PRCELL}
+	cat lvs/${PRCELL}_lvs.log | ../tech/script/checklvs ${PRCELL} ${OPT}
 
 xflvs: cdl
 	@test -d lvs || mkdir lvs
 	cat ../tech/magic/lvsf.tcl|perl -pe 's#{PATH}#${LMAG}#ig;s#{CELL}#${PRCELL}#ig;' > lvs/${PRCELL}_spi.tcl
 	magic -noconsole -dnull lvs/${PRCELL}_spi.tcl > lvs/${PRCELL}_spi.log ${RDIR}
 	netgen -batch lvs "lvs/${PRCELL}.spi ${PRCELL}"  "cdl/${PRCELL}.spice ${PRCELL}" ${PDKPATH}/libs.tech/netgen/sky130A_setup.tcl lvs/${PRCELL}_lvs.log > lvs/${PRCELL}_netgen_lvs.log
-	cat lvs/${PRCELL}_lvs.log | ../tech/script/checklvs ${PRCELL}
+	cat lvs/${PRCELL}_lvs.log | ../tech/script/checklvs ${PRCELL} ${OPT}
 
 lvs:
 	test -d lvs || mkdir lvs
@@ -238,7 +238,7 @@ lvsall:
 	@${foreach b, ${CELLS}, ${MAKE} -s cdl lvs CELL=$b;}
 
 xlvsall:
-	@${foreach b, ${CELLS}, ${MAKE} -s xlvs CELL=$b;}
+	@${foreach b, ${CELLS}, ${MAKE} -s xlvs CELL=$b OPT="--short";}
 
 xflvsall:
 	@${foreach b, ${CELLS}, ${MAKE} -s xflvs CELL=$b;}
