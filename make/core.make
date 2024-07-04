@@ -185,7 +185,7 @@ lvs:
 #--------------------------------------------------------------------------------------
 drc:
 	@test -d drc || mkdir drc
-	@${ECHO} "load ${NCELL}.mag\nlogcommands drc/${PRCELL}_drc.log\nset b [view bbox]\nbox values [lindex \$$b 0] [lindex \$$b 1] [lindex \$$b 2] [lindex \$$b 3]\nexpand\nexpand\ndrc full\ndrc catchup\ndrc why\ndrc count total\nquit\n" > drc/${PRCELL}_drc.tcl
+	cat ../tech/magic/drc.tcl|perl -pe 's#{PATH}#${LMAG}#ig;s#{CELL}#${PRCELL}#ig;'> drc/${PRCELL}_drc.tcl
 	@magic -noconsole -dnull drc/${PRCELL}_drc.tcl > drc/${PRCELL}_drc.log ${RDIR}
 	@tail -n 1 drc/${PRCELL}_drc.log| perl -ne "\$$exit = 0;use Term::ANSIColor;print(sprintf(\"%-40s\t[ \",${PRCELL}));if(m/:\s+0\n/ig){print(color('green').'DRC OK  '.color('reset'));}else{print(color('red').'DRC FAIL'.color('reset'));\$$exit = 1;};print(\" ]\n\");exit \$$exit;" || tail -n 10 drc/${PRCELL}_drc.log
 
@@ -218,6 +218,11 @@ lpe: xsch
 	magic -noconsole -dnull lpe/${PRCELL}_lpe.tcl ${RDIR} | tee lpe/${PRCELL}_magic_lpe.log
 	perl -pi -e "s/_flat//ig;" lpe/${PRCELL}_lpe.spi
 	../tech/script/fixlpe lpe/${PRCELL}_lpe.spi xsch/${PRCELL}.spice ${PRCELL}
+#- Check LVS on the parasitic netlist to make sure it is a match
+	echo "Running LVS on the extracted netlist to confirm it's the same"
+	cat lpe/${PRCELL}_lpe.spi |egrep -v "^C" > lpe/${PRCELL}_lpe_noc.spi
+	netgen -batch lvs "lpe/${PRCELL}_lpe_noc.spi ${PRCELL}"  "cdl/${PRCELL}.spice ${PRCELL}" ${PDKPATH}/libs.tech/netgen/sky130A_setup.tcl lpe/${PRCELL}_lvs.log > lpe/${PRCELL}_netgen_lvs.log
+	cat lpe/${PRCELL}_lvs.log | ../tech/script/checklvs ${PRCELL} --short
 
 lper: xsch
 	test -d lpe || mkdir lpe
@@ -226,6 +231,12 @@ lper: xsch
 	magic -noconsole -dnull lpe/${PRCELL}_lper.tcl ${RDIR} | tee lpe/${PRCELL}_magic_lper.log
 	perl -pi -e "s/_flat//ig;" lpe/${PRCELL}_lper.spi
 	../tech/script/fixlpe lpe/${PRCELL}_lper.spi xsch/${PRCELL}.spice ${PRCELL}
+#- Check LVS on the parasitic netlist to make sure it is a match
+	echo "Running LVS on the extracted netlist to confirm it's the same"
+	cat lpe/${PRCELL}_lper.spi |egrep -v "^C" |perl -ne '$$skip=0;if(m/^R/ig){unless(m/sky130/ig){$$skip = 1;}};unless($$skip){print $$_};'|perl -pe 's/\.(n|t)\d+\s/ /ig'> lpe/${PRCELL}_lper_norc.spi
+	netgen -batch lvs "lpe/${PRCELL}_lper_norc.spi ${PRCELL}"  "cdl/${PRCELL}.spice ${PRCELL}" ${PDKPATH}/libs.tech/netgen/sky130A_setup.tcl lpe/${PRCELL}_lvsr.log > lpe/${PRCELL}_netgen_lvsr.log
+	cat lpe/${PRCELL}_lvsr.log | ../tech/script/checklvs ${PRCELL} --short
+
 
 lpeh: xsch
 	test -d lpe || mkdir lpe
