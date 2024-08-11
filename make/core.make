@@ -279,6 +279,7 @@ BINS := $(SCHS:%.sch=%)
 SVGP =${<:%.sch=%}.svg
 MDP =${<:%.sch=%}.md
 SVG = ${subst ../design/,,${SVGP}}
+SVGMD = ${subst .svg,,${subst _,\_,${SVG}}}
 
 svg:
 	test -d ../documents/ || mkdir ../documents
@@ -291,9 +292,9 @@ svgf: ${BINS}
 
 %: %.sch
 	xschem --preinit "set dark_colorscheme 0" -x -q -p --svg $<
-	echo "## ${SVG}\n\n" >> ../documents/schematic.md
-	echo "\n\n![${SVG}](${SVG})\n\n" >> ../documents/schematic.md
+	echo "## ${SVGMD}\n\n" >> ../documents/schematic.md
 	-test -f ${MDP} && cat ${MDP} >> ../documents/schematic.md
+	echo "\n\n![](${SVG})\n\n" >> ../documents/schematic.md
 	test -d  ../documents/${LIB} || mkdir ../documents/${LIB}
 	cp plot.svg ../documents/${SVG}
 
