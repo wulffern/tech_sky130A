@@ -6,12 +6,9 @@ my $lib = shift;
 open(my $fh, "<", $file) || die "Could not open $file";
 
 while(<$fh>){
-  if(m/_mdl\.sv/){
-    s/_mdl\.sv//ig;
-    s/^\s+//ig;
-    my @ar = split(/\s+/);
-    my $name = $ar[-1];
-    system("make netlist_cell LIB=$lib CELL=$name")
+  if(m/work\/xsch\/(.*)\.v/){
+    my $name = $1;
+    system("make netlist_cell ver LIB=$lib CELL=$name")
   }
 
 }

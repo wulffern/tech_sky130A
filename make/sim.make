@@ -9,8 +9,10 @@ cellsv:
 
 netlist_cell:
 	test -d ../../work/xsch || mkdir ../../work/xsch
-	cd ../../work/ && make xsch CELL=${CELL}
+	cd ../../work/ && make xsch LIB=${LIB} CELL=${CELL}
 
+ver:
+	test -d ../../work/xsch && cd ../../work/ && make ver LIB=${LIB} CELL=${CELL}
 
 netlist: netlist_cell
 #- I've seen port ordering change between xschem version, so I also
@@ -20,9 +22,6 @@ netlist: netlist_cell
 
 
 netlist_sv:
-	#test -d ../../work/xsch || mkdir ../../work/xsch
-	#cd ../../work/ && make xsch CELL=${CELL}
-	#perl ../../tech/script/genxdut ../../work/xsch/${CELL}.spice ${CELL}
+	perl ../../tech/script/netlist_mdl ../../rtl/${CELL}.ys ${LIB}
 	cd ../../rtl; yosys ${CELL}.ys
 	perl ../../tech/script/genxdut ../../rtl/${CELL}.spice ${CELL}
-	perl ../../tech/script/netlist_mdl ../../rtl/${CELL}.ys ${LIB}

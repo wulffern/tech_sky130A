@@ -23,7 +23,7 @@ while(<>){
   if(m/match uniquely/ig){
     $match = 1;
   }
-  if(m/Property errors were found/ig){
+  if(m/the following cells had property errors/ig){
      $propOk = 0;
   }
   if(m/failed pin matching/ig){
@@ -43,7 +43,7 @@ if(!$match){
 }
 
 if(!$propOk){
-  $message .= " Warning: Property errors\n";
+  $message .= " Error: Property errors\n";
 }
 
 if(!$match || !$propOk){
@@ -54,7 +54,7 @@ my $smiley = <<EOF;
 
 ##################################
 #                _   _           #
-#                *   *           #
+#                \$   \$           #
 #   CORRECT        |             #
 #                \\___/           #
 #                                #

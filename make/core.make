@@ -132,6 +132,7 @@ ip:
 	-test -f ../cic/ip.py && python3 ../cic/ip.py
 	cd ${BUILD};${CIC}  --I ../cic ../cic/ip.json  ../cic/sky130.tech ${LIB} ${CICOPT}
 	cd ${BUILD}; ${CICPY}  transpile ${LIB}.cic ../cic/sky130.tech ${LIB}  ${CICVIEWS} --smash "(P|N)CHIOA" --exclude ${CICEXCLUDE}
+	-test -f ../cic/post.py && python3 ../cic/post.py
 
 view:
 	@cd ${BUILD}; ${CICGUI} ${LIB}.cic ../cic/sky130.tech
@@ -149,10 +150,14 @@ xsch:
 	cat xsch/${CELL}.spice.bak | perl ../tech/script/fixsubckt > xsch/${CELL}.spice
 	-rm xsch/${CELL}.spice.bak
 
+ver:
+	@test -d xsch  && cd xsch &&  ../../tech/script/genver ${CELL}.spice ${CELL}
+
+
 
 cdl:
 	@test -d cdl || mkdir cdl
-	xschem -q -x -b -s --tcl "set lvs_netlist 1; set netlist_dir ${PWD}/cdl/; set bus_replacement_char {[]};" -n ../design/${LIB}/${CELL}.sch
+	xschem -q -x -b -s --tcl "set lvs_netlist 1; set netlist_dir ${PWD}/cdl/; set bus_replacement_char {[]};" -n ../design/${LIB}/${PRCELL}.sch
 
 
 #--------------------------------------------------------------------------------------
@@ -173,12 +178,7 @@ xflvs: cdl
 	netgen -batch lvs "lvs/${PRCELL}.spi ${PRCELL}"  "cdl/${PRCELL}.spice ${PRCELL}" ${PDKPATH}/libs.tech/netgen/sky130A_setup.tcl lvs/${PRCELL}_lvs.log > lvs/${PRCELL}_netgen_lvs.log
 	cat lvs/${PRCELL}_lvs.log | ../tech/script/checklvs ${PRCELL} ${OPT}
 
-lvs:
-	test -d lvs || mkdir lvs
-	cat ../tech/magic/lvs.tcl|perl -pe 's#{PATH}#${LMAG}#ig;s#{CELL}#${PRCELL}#ig;' > lvs/${PRCELL}_spi.tcl
-	magic -noconsole -dnull lvs/${PRCELL}_spi.tcl > lvs/${PRCELL}_spi.log ${RDIR}
-	netgen -batch lvs "lvs/${PRCELL}.spi ${PRCELL}"  "${BUILD}/${LIB}.spi ${PRCELL}" ${PDKPATH}/libs.tech/netgen/sky130A_setup.tcl lvs/${PRCELL}_lvs.log > lvs/${PRCELL}_netgen.log
-	cat lvs/${PRCELL}_lvs.log | ../tech/script/checklvs ${PRCELL} ${OPT}
+lvs: xlvs
 
 #--------------------------------------------------------------------------------------
 #- Run DRC
