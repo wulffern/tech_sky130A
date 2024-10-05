@@ -1,0 +1,36 @@
+title: ${IP}
+author:
+  name: ${author}
+  email: ${email}
+
+description: >-
+    ${tagline}
+domain: "${url}"
+baseurl: "/${ip}"
+url: "https://${url}"
+
+show_excerpts: false
+
+minima:
+  skin: classic
+
+# Build settings
+markdown: kramdown
+
+kramdown:
+  mathjax: true
+
+
+remote_theme: wulffern/minima
+
+plugins:
+  - jekyll-feed
+  - jemoji
+  - jekyll-seo-tag
+  - jekyll-remote-theme
+  - jekyll-paginate
+
+exclude:
+   - Gemfile
+   - Gemfile.lock
+   - node_modules

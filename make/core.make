@@ -274,6 +274,7 @@ spi:
 xview:
 	xschem -b  ../design/${LIB}/${CELL}.sch &
 
+SVGLIBS=${LIB}
 SCHS := $(wildcard ../design/${LIB}/*.sch)
 BINS := $(SCHS:%.sch=%)
 SVGP =${<:%.sch=%}.svg

@@ -2,11 +2,30 @@
 dirs:
   - design
   - design/${IP}
-  - documents
   - sim
   - work
 
 create:
+
+  options.yaml: |
+    library: ${IP}
+    cell: ${CELL}
+    author: Anonymous
+    tagline: The answer is 42
+    email: anon@anon.com
+    url: anon.com
+    docdir: docs
+
+  config.yaml: |
+    #- Carsten's PDK. Borders, symbols, loop stability
+    cpdk:
+      remote: git@github.com:wulffern/cpdk.git
+      revision: main
+
+    tech_sky130A:
+      remote: git@github.com:wulffern/tech_sky130A.git
+      revision: main
+
   .gitignore: |
     *.run
     *.ext
@@ -55,10 +74,9 @@ create:
     # ip: generate ../design/<LIB> from ../cic/ip.json
     # gds: generate gds/<CELL>.gds
     # cdl: generate cdl/<CELL>.cdl
-    # lvs: Check cdl/<CELL>.cdl versus ../design/<LIB>/<CELL>.mag
+    # xlvs: Check cdl/<CELL>.cdl versus ../design/<LIB>/<CELL>.mag
     # lpe: Extract parasitics lpe/<CELL>.spi
     # drc: Run design rule checks on ../design/<LIB>/<CELL>.mag
-    # svg: Make schematic SVGs in ../documents/schematic.md
     # -----------------------------------------------------------
 
 

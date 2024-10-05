@@ -1,0 +1,33 @@
+
+dirs:
+  - assets
+  - assets/${IP}
+  - assets/css
+
+create:
+  assets/css/style.scss: |
+    ---
+    ---
+    @import
+      "minima/skins/{{ site.minima.skin | default: 'classic' }}",
+      "minima/initialize";
+
+copy:
+  - _config.yml
+  - Gemfile
+  - Gemfile.lock
+  - 404.html
+
+
+do:
+  - ls -l
+  - cd ../work; make doc
+  - cp -pr ../documents/* .
+  - echo -e "---\nlayout: home\n---\n\n" > index.md
+  - cat ../README.md >> index.md
+
+
+echo: |
+
+  Made docs
+  Good luck with ${IP}.
