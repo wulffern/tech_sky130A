@@ -23,8 +23,7 @@ do:
   - ls -l
   - cd ../work; make doc
   - cp -pr ../documents/* .
-  - "echo -e \"---\nlayout: home\n---\n\n\" > index.md"
-  - cat ../README.md >> index.md
+  - cp ../README.md  index.md
 
 
 echo: |
