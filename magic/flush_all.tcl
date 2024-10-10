@@ -1,3 +1,10 @@
 
 set values [ cellname list all ]
-foreach x $values {flush $x}
+set mrev [lindex [lreverse [split [exec magic --version] "."]] 0 ]
+foreach x $values {
+    if {${mrev} > 494} {
+        flush $x -noprompt
+    } else {
+        flush $x
+    }
+}
