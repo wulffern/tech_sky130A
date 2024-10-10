@@ -115,7 +115,8 @@ Outputs:
 Commands:
    gds    Generate GDSII from layout
    xsch   Generate spice netlist from schematic
-   xlvs   Run Layout Versus Schematic
+   cdl    Generate spice netlist from schematic for LVS
+   lvs   Run Layout Versus Schematic
    drc    Run Design Rule Checks
    doc    Use pandoc to convert README.md into README.html
    xview  Start Xschem
@@ -145,7 +146,7 @@ gds:
 
 xsch:
 	@test -d xsch || mkdir xsch
-	xschem -q -x -b -s -n ../design/${LIB}/${CELL}.sch
+	-xschem -q -x -b -s -n ../design/${LIB}/${CELL}.sch
 	cp xsch/${CELL}.spice xsch/${CELL}.spice.bak
 	cat xsch/${CELL}.spice.bak | perl ../tech/script/fixsubckt > xsch/${CELL}.spice
 	-rm xsch/${CELL}.spice.bak
@@ -157,7 +158,7 @@ ver:
 
 cdl:
 	@test -d cdl || mkdir cdl
-	xschem -q -x -b -s --tcl "set lvs_netlist 1; set netlist_dir ${PWD}/cdl/; set bus_replacement_char {[]};" -n ../design/${LIB}/${PRCELL}.sch
+	-xschem -q -x -b -s --tcl "set lvs_netlist 1; set netlist_dir ${PWD}/cdl/; set bus_replacement_char {[]};" -n ../design/${LIB}/${PRCELL}.sch
 
 
 #--------------------------------------------------------------------------------------
@@ -271,7 +272,7 @@ clean:
 
 spi:
 	test -d xsch || mkdir xsch
-	xschem -q -x -b -s -n ../design/${LIB}/${CELL}.sch
+	-xschem -q -x -b -s -n ../design/${LIB}/${CELL}.sch
 	cat xsch/${CELL}.spice| ../tech/script/fixspi > ../cic/${CELL}.spi
 
 xview:
