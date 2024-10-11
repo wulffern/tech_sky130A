@@ -59,7 +59,7 @@ title: {title}
         dirname = self.options["library"].lower()
         with open(installfile,"w") as fo:
             fo.write(self.header.replace("{title}","Install"))
-            fo.write(f"# Clone " + self.options["cell"] + "\n\n")
+            fo.write(f"# Clone " + self.options["library"] + "\n\n")
             fo.write("To install, do the following\n\n")
             fo.write("```bash\n")
             fo.write("python3 -m pip install cicconf\n")
@@ -105,7 +105,7 @@ title: {title}
 
         buff = self.header.replace("{title}","Schematics")
 
-        buff = """
+        buff += """
 * TOC
 {:toc }
 \n\n"""
