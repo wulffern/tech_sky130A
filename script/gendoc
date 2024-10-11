@@ -10,7 +10,7 @@ class MakeDocs():
 
     def __init__(self,infofile):
         self.readOptions(infofile)
-        self.docdir = "../" + self._get("doc.src",self.options)
+        self.docdir = "../" + self._get("doc.dest",self.options)
 
         if(not os.path.exists(self.docdir)):
             os.mkdir(self.docdir)
