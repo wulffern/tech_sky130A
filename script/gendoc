@@ -8,10 +8,13 @@ import glob
 
 class MakeDocs():
 
-    def __init__(self,infofile,docdir="../documents"):
+    def __init__(self,infofile):
         self.readOptions(infofile)
+        self.docdir = "../" + self._get("doc.src",self.options)
 
-        self.docdir = docdir
+        if(not os.path.exists(self.docdir)):
+            os.mkdir(self.docdir)
+
         self.header = """---
 layout: page
 title: {title}
@@ -112,13 +115,8 @@ title: {title}
                 for s in mark:
                     buff += self.makeOneSchematic(s.replace(".md",""))
 
-
-
-        docdir = self._get("doc.dir",self.options)
-        with open(".." + os.path.sep + docdir + os.path.sep + "schematic.md","w") as fo:
+        with open(self.docdir + os.path.sep + "schematic.md","w") as fo:
             fo.write(buff)
-
-
 
 
         pass
