@@ -40,6 +40,7 @@ title: {title}
 
     def doCmdWithReturn(self,cmd):
         result = subprocess.getoutput(cmd)
+
         return result
 
     def readOptions(self,infofile):
@@ -74,9 +75,14 @@ title: {title}
         sch = cellpath + ".sch"
         shortpath = cellpath.replace("../design/","")
         svg =  shortpath + ".svg"
+        pathsvg =  self.docdir + os.path.sep +  shortpath + ".svg"
         md = shortpath + ".md"
         self.doCmdWithReturn(f'xschem --preinit "set dark_colorscheme 0" -x -q -p --svg {sch}')
+        dpath = os.path.dirname(pathsvg)
+        if(not os.path.exists(dpath)):
+            os.makedirs(dpath)
 
+        os.system(f"cp plot.svg {pathsvg} ")
         mdbuff = ""
         if(os.path.exists(md)):
             with open(md) as fi:
@@ -105,7 +111,7 @@ title: {title}
 \n\n"""
         #- Check for Markdowns
         for lib in libraries:
-            mark = glob.glob("../design/{lib}/*.md")
+            mark = glob.glob(f"../design/{lib}/*.md")
             #- No markdowns, write all schematics
             if(len(mark) == 0):
                 sch = glob.glob(f"../design/{lib}/*.sch")
