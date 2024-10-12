@@ -18,9 +18,21 @@ def cli(info):
 
     if("sim" in obj):
         for tb in obj["sim"]:
+            print(f"## {tb} \n\n")
             cmd = obj["sim"][tb]
+            print(f"Running `{cmd}`")
+            print("```bash\n\n")
+
             os.system(f"cd sim/{tb} && {cmd}")
+            print("```\n\n")
+            htmls = glob.glob(f"sim/{tb}/results/*.html")
+            for f in htmls:
+                b = os.path.basename(f).replace(".html","")
+                print("\n\n### " + b + "\n")
+                os.system(f"pandoc -t gfm {f} -o -")
+
             os.system(f"cp -r sim/{tb}/results _results/{tb}")
+
 
 
 
