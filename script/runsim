@@ -22,14 +22,14 @@ def cli(info):
             cmd = obj["sim"][tb]
             print(f"Running `{cmd}`")
             print("```bash\n\n")
-
-            os.system(f"cd sim/{tb} && {cmd}")
+            logs = subprocess.getoutput(f"cd sim/{tb} && {cmd}")
+            print(logs)
             print("```\n\n")
             htmls = glob.glob(f"sim/{tb}/results/*.html")
             for f in htmls:
                 b = os.path.basename(f).replace(".html","")
                 print("\n\n### " + b + "\n")
-                os.system(f"pandoc -t gfm {f} -o -")
+                print(subprocess.getoutput(f"pandoc -t gfm {f} -o -"))
 
             os.system(f"cp -r sim/{tb}/results _results/{tb}")
 
