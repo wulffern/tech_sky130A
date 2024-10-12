@@ -1,0 +1,30 @@
+#!/usr/bin/env python3
+
+import re
+import click
+import yaml
+import os
+import subprocess
+import glob
+
+@click.command()
+@click.option("--info",default="../info.yaml",help="Default info file")
+def cli(info):
+    with open(info) as fi:
+        obj = yaml.safe_load(fi)
+
+    if(not os.path.exists("_results")):
+        os.mkdir("_results")
+
+    if("sim" in obj):
+        for tb in obj["sim"]:
+            cmd = obj["sim"][tb]
+            os.system(f"cd sim/{tb} && {cmd}")
+            os.system(f"cp sim/{tb}/results _results/{tb}")
+
+
+
+
+
+if(__name__ == "__main__"):
+    cli()
