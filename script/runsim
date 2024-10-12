@@ -20,7 +20,7 @@ def cli(info):
         for tb in obj["sim"]:
             cmd = obj["sim"][tb]
             os.system(f"cd sim/{tb} && {cmd}")
-            os.system(f"cp sim/{tb}/results _results/{tb}")
+            os.system(f"cp -r sim/{tb}/results _results/{tb}")
 
 
 
