@@ -72,15 +72,18 @@ title: {title}
 
     def makeOneSchematic(self,cellpath):
 
+        cell = os.path.basename(cellpath)
         sch = cellpath + ".sch"
         shortpath = cellpath.replace("../design/","")
         svg =  shortpath + ".svg"
         pathsvg =  self.docdir + os.path.sep +  shortpath + ".svg"
-        md = shortpath + ".md"
+
+        md = cellpath + ".md"
         self.doCmdWithReturn(f'xschem --preinit "set dark_colorscheme 0" -x -q -p --svg {sch}')
         dpath = os.path.dirname(pathsvg)
         if(not os.path.exists(dpath)):
             os.makedirs(dpath)
+
 
         os.system(f"cp plot.svg {pathsvg} ")
         mdbuff = ""
@@ -88,7 +91,7 @@ title: {title}
             with open(md) as fi:
                 mdbuff = fi.read()
 
-        buff = f"""## {shortpath}
+        buff = f"""### {cell}
 {mdbuff}
 
  ![]({svg})
@@ -103,6 +106,7 @@ title: {title}
         if(libraries is None):
             return
 
+
         buff = self.header.replace("{title}","Schematics")
 
         buff += """
@@ -111,9 +115,14 @@ title: {title}
 \n\n"""
         #- Check for Markdowns
         for lib in libraries:
+            cells = libraries[lib]
+            buff += f"## {lib}\n\n"
             mark = glob.glob(f"../design/{lib}/*.md")
+            if(len(cells) > 0):
+                for c in cells:
+                    buff += self.makeOneSchematic(f"../design/{lib}/{c}")
             #- No markdowns, write all schematics
-            if(len(mark) == 0):
+            elif(len(mark) == 0):
                 sch = glob.glob(f"../design/{lib}/*.sch")
                 for s in sch:
                     buff += self.makeOneSchematic(s.replace(".sch",""))

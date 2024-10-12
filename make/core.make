@@ -264,7 +264,11 @@ drcall:
 
 doc:
 #svg dclone
+	test -d ../docs || mkdir ../docs
 	python3 ../tech/script/gendoc --info ../info.yaml
+	-test -d ../media && cp -r ../media ../docs
+	-cp ../README.md ../docs/index.md
+	-test -d ../documents && cp -r ../documents ../docs
 	pandoc -s ../README.md -o ../README.html
 
 clean:
