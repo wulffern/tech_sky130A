@@ -261,16 +261,6 @@ lpeall:
 drcall:
 	@${foreach  b, ${CELLS}, ${MAKE} -s drc CELL=$b;}
 
-
-doc:
-#svg dclone
-	test -d ../docs || mkdir ../docs
-	python3 ../tech/script/gendoc --info ../info.yaml
-	-test -d ../media && cp -r ../media ../docs
-	-cp ../README.md ../docs/index.md
-	-test -d ../documents && cp -r ../documents ../docs
-	pandoc -s ../README.md -o ../README.html
-
 clean:
 	-rm -rf lvs drc lpe cdl gds *.ext *.sim *.nodes
 
@@ -281,28 +271,3 @@ spi:
 
 xview:
 	xschem -b  ../design/${LIB}/${CELL}.sch &
-
-SVGLIBS=${LIB}
-SCHS= $(wildcard ../design/${LIB}/*.sch)
-BINS := $(SCHS:%.sch=%)
-SVGP =${<:%.sch=%}.svg
-MDP =${<:%.sch=%}.md
-SVG = ${subst ../design/,,${SVGP}}
-SVGMD = ${subst .svg,,${subst _,\_,${SVG}}}
-
-svg:
-	test -d ../documents/ || mkdir ../documents
-	@echo "---\nlayout: page\ntitle: Schematic\npermalink: sch\n---\n" > ../documents/schematic.md
-
-	${foreach l, ${SVGLIBS}, ${MAKE} svgf LIB=${l};}
-	pandoc -s ../documents/schematic.md -o ../documents/schematic.html
-
-svgf: ${BINS}
-
-%: %.sch
-	xschem --preinit "set dark_colorscheme 0" -x -q -p --svg $<
-	echo "## ${SVGMD}\n\n" >> ../documents/schematic.md
-	-test -f ${MDP} && cat ${MDP} >> ../documents/schematic.md
-	echo "\n\n![](${SVG})\n\n" >> ../documents/schematic.md
-	test -d  ../documents/${LIB} || mkdir ../documents/${LIB}
-	cp plot.svg ../documents/${SVG}
