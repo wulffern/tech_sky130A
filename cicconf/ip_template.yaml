@@ -2,19 +2,29 @@
 dirs:
   - design
   - design/${IP}
+  - .github
+  - .github/workflows
+  - media
   - sim
   - work
 
 create:
 
-  options.yaml: |
+  info.yaml: |
     library: ${IP}
     cell: ${CELL}
     author: Anonymous
     tagline: The answer is 42
     email: anon@anon.com
     url: anon.com
-    docdir: docs
+    doc:
+      # Make docs
+      #libraries:
+      #   <library>:
+      #       - <cell>
+      #       - <cell>
+    sim:
+      # <simdir>: command
 
   config.yaml: |
     #- Carsten's PDK. Borders, symbols, loop stability
@@ -22,9 +32,110 @@ create:
       remote: git@github.com:wulffern/cpdk.git
       revision: main
 
-    tech_sky130A:
+    #- Technology library
+    tech_sky130a:
       remote: git@github.com:wulffern/tech_sky130A.git
       revision: main
+
+    #- Standard cells
+    jnw_tr_sky130a:
+      remote: git@github.com:analogicus/jnw_tr_sky130A.git
+      revision: main
+
+    #- Analog transistor library
+    jnw_atr_sky130a:
+      remote: git@github.com:analogicus/jnw_atr_sky130A.git
+      revision: main
+
+  .github/workflows/lvs.yaml: |
+    name: LVS
+
+    on:
+      push:
+        branches: ["main"]
+      workflow_dispatch:
+
+    concurrency:
+      group: "lvs"
+      cancel-in-progress: true
+
+    jobs:
+      lvs:
+        uses: analogicus/jnw-actions/.github/workflows/lvs.yaml@main
+
+  .github/workflows/drc.yaml: |
+    name: DRC
+
+    on:
+      push:
+        branches: ["main"]
+      workflow_dispatch:
+
+    concurrency:
+      group: "drc"
+      cancel-in-progress: true
+
+    jobs:
+      drc:
+        uses: analogicus/jnw-actions/.github/workflows/drc.yaml@main
+
+  .github/workflows/gds.yaml: |
+    name: GDS
+
+    on:
+      push:
+        branches: ["main"]
+      workflow_dispatch:
+
+    concurrency:
+      group: "gds"
+      cancel-in-progress: true
+
+    jobs:
+      gds:
+        uses: analogicus/jnw-actions/.github/workflows/gds.yaml@main
+
+  .github/workflows/sim.yaml: |
+    name: SIM
+
+    on:
+      push:
+        branches: ["main"]
+      workflow_dispatch:
+
+    concurrency:
+      group: "sim"
+      cancel-in-progress: true
+
+    jobs:
+      sim:
+        uses: analogicus/jnw-actions/.github/workflows/sim.yaml@main
+
+
+  .github/workflows/docs.yaml: |
+    name: DOCS
+
+    on:
+      push:
+        branches: ["main"]
+      workflow_dispatch:
+
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+
+    concurrency:
+      group: "docs"
+      cancel-in-progress: true
+
+    jobs:
+      docs:
+        uses: analogicus/jnw-actions/.github/workflows/docs.yaml@main
+        permissions:
+          contents: read
+          pages: write
+          id-token: write
 
   .gitignore: |
     *.run
@@ -46,6 +157,8 @@ create:
     work/drc
     work/xsch
 
+  design/${IP}/${CELL}.md: |
+    
   design/${IP}/${CELL}.sch: |
     v {xschem version=3.0.0 file_version=1.2 }
     G {}
@@ -84,9 +197,6 @@ create:
     LIB=${IP}
     CELL=${CELL}
 
-    #- Which libraries to make SVG files for
-    SVGLIBS=${IP}
-
     #- Provide cells you want to check for the lvsall drcall commands
     CELLS = ${CELL}
 
@@ -108,7 +218,11 @@ create:
     append XSCHEM_LIBRARY_PATH :../design
   README.md: |
 
-    # ${IP}
+    [![GDS](../../actions/workflows/gds.yaml/badge.svg)](../../actions/workflows/gds.yaml)
+    [![DRC](../../actions/workflows/drc.yaml/badge.svg)](../../actions/workflows/drc.yaml)
+    [![LVS](../../actions/workflows/lvs.yaml/badge.svg)](../../actions/workflows/lvs.yaml)
+    [![DOCS](../../actions/workflows/docs.yaml/badge.svg)](../../actions/workflows/docs.yaml)
+    [![SIM](../../actions/workflows/sim.yaml/badge.svg)](../../actions/workflows/sim.yaml)
 
     # Who
     ${USER}
@@ -122,11 +236,10 @@ create:
 
     # What
 
-    | What            | Lib/Folder       | Cell/Name |
-    | :-              | :-:              | :-:       |
-    | Schematic       | ${IP} | ${CELL} |
-    | Layout          | ${IP} | ${CELL} |
-    | LPE             | ${IP} | ${CELL} |
+    | What            |        Cell/Name |
+    | :-              |  :-:       |
+    | Schematic       | design/${IP}/${CELL}.sch |
+    | Layout          | design/${IP}/${CELL}.mag |
 
 
     # Changelog/Plan
@@ -151,26 +264,13 @@ create:
     | Temperature         | -40     | 27            | 125     | C     |
 
 
-    # Status
-
-    | Stage                       | TYPE | Status | Comment                        |
-    | :---                        | :-:  | :---:  | :--:                           |
-    | Specification               | DOC  | :x:    |                                |
-    | Schematic                   | VIEW | :x:    |                                |
-    | Schematic simulation        | VER  | N/A    |                                |
-    | Layout                      | VIEW | :x:    |                                |
-    | Layout parasitic extraction | VIEW | :x:    |                                |
-    | LPE simulation              | VER  | :x:    |                                |
-    | LVS                         | VER  | :x:    |                                |
-    | DRC                         | VER  | :x:    |                                |
-    | ERC                         | VER  | :x:    |                                |
-    | ANT                         | VER  | :x:    |                                |
-
 do:
   - ln -s ../tech_sky130A tech
   - cd work && ln -s ../tech/magic/mos.24bit.dstyle
   - cd work && ln -s ../tech/magic/mos.24bit.std.cmap
   - cd sim && ln -s ../tech/cicsim/cicsim.yaml
+  - cd design && ln -s ../../jnw_tr_sky130a/design/JNW_TR_SKY130A
+  - cd design && ln -s ../../jnw_atr_sky130a/design/JNW_ATR_SKY130A
   - git init
   - git add .
   - git add -f work/.magicrc
@@ -185,9 +285,7 @@ echo: |
 
   Actions:
     1. Create an github repository, and set remote of ${IP}
-    2. Update config.yaml to point to your new repository,
-       and create a pull request to wulffern
-    3. cd ${ip}/work/; make xview
-    4. Have fun!
+    2. cd ${ip}/work/; make xview
+    3. Have fun!
 
   Good luck with ${IP}.

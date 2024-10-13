@@ -10,6 +10,9 @@ cellsv:
 netlist_cell:
 	test -d ../../work/xsch || mkdir ../../work/xsch
 	cd ../../work/ && make xsch LIB=${LIB} CELL=${CELL}
+ifeq (${VIEW},Lay)
+	cd ../../work && make cdl lpe LIB=${LIB} CELL=${CELL}
+endif
 
 ver:
 	test -d ../../work/xsch && cd ../../work/ && make ver LIB=${LIB} CELL=${CELL}
