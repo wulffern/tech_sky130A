@@ -34,7 +34,7 @@ create:
       revision: main
 
     #- Technology library
-    tech_sky130a:
+    tech_sky130A:
       remote: git@github.com:wulffern/tech_sky130A.git
       revision: main
 
@@ -269,7 +269,7 @@ create:
 
 
 do:
-  - ln -s ../tech_sky130a tech
+  - ln -s ../tech_sky130A tech
   - cd work && ln -s ../tech/magic/mos.24bit.dstyle
   - cd work && ln -s ../tech/magic/mos.24bit.std.cmap
   - cd sim && ln -s ../tech/cicsim/cicsim.yaml
