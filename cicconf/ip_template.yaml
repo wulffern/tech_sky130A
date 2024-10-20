@@ -14,9 +14,10 @@ create:
     library: ${IP}
     cell: ${CELL}
     author: Anonymous
+    github: analogicus
     tagline: The answer is 42
     email: anon@anon.com
-    url: anon.com
+    url: analogicus.github.io
     doc:
       # Make docs
       #libraries:
@@ -228,10 +229,12 @@ create:
     ${USER}
 
     # Why
-     <explain why you made this module>
+
+    <explain why you made this module>
 
     # How
-     <explain short how you made this module>
+
+    <explain short how you made this module>
 
 
     # What
@@ -243,12 +246,14 @@ create:
 
 
     # Changelog/Plan
+
     | Version | Status | Comment|
     | :-| :-| :-|
     |0.1.0 | :x: | Make something |
 
 
     # Signal interface
+
     | Signal       | Direction | Domain  | Description                               |
     | :---         | :---:     | :---:   | :---                                      |
     | VDD_1V8         | Input     | VDD_1V8 | Main supply                               |
@@ -257,6 +262,7 @@ create:
 
 
     # Key parameters
+
     | Parameter           | Min     | Typ           | Max     | Unit  |
     | :---                | :-:     | :-:           | :-:     | :---: |
     | Technology          |         | Skywater 130 nm |         |       |

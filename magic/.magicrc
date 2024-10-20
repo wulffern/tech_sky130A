@@ -6,3 +6,5 @@ macro Shift_XK_Up "move u 1"
 macro Shift_XK_Down "move d 1"
 macro Shift_XK_Left "move l 1"
 macro Shift_XK_Right "move r 1"
+
+source ../tech/magic/cic.tcl
