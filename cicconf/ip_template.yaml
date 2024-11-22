@@ -13,10 +13,15 @@ create:
   info.yaml: |
     library: ${IP}
     cell: ${CELL}
+    # Your name
     author: Anonymous
+    # Your github username
     github: analogicus
+    # Something funny and descriptive
     tagline: The answer is 42
+    # Your email, if you so wish
     email: anon@anon.com
+    # Your github site, usually <github username>.github.io
     url: analogicus.github.io
     doc:
       # Make docs
@@ -54,6 +59,12 @@ create:
     on:
       push:
         branches: ["main"]
+        paths:
+          - 'design/**.mag'
+          - 'design/**.sch'
+          - 'design/**.sym'
+          - 'info.yaml'
+          - 'config.yaml'
       workflow_dispatch:
 
     concurrency:
@@ -70,6 +81,10 @@ create:
     on:
       push:
         branches: ["main"]
+        paths:
+          - 'design/**.mag'
+          - 'info.yaml'
+          - 'config.yaml'
       workflow_dispatch:
 
     concurrency:
@@ -86,6 +101,10 @@ create:
     on:
       push:
         branches: ["main"]
+        paths:
+          - 'design/**.mag'
+          - 'info.yaml'
+          - 'config.yaml'
       workflow_dispatch:
 
     concurrency:
@@ -102,6 +121,13 @@ create:
     on:
       push:
         branches: ["main"]
+        paths:
+          - 'design/**.sch'
+          - 'design/**.mag'
+          - 'design/**.sym'
+          - 'sim/**'
+          - 'info.yaml'
+          - 'config.yaml'
       workflow_dispatch:
 
     concurrency:
@@ -119,6 +145,13 @@ create:
     on:
       push:
         branches: ["main"]
+        paths:
+          - '**.md'
+          - 'documents/**'
+          - 'media/**'
+          - 'design/**'
+          - 'info.yaml'
+          - 'config.yaml'
       workflow_dispatch:
 
     permissions:
