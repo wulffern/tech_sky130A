@@ -21,6 +21,13 @@
 
 
 
+.lib Tm
+.lib "../../../tech/ngspice/temperature.spi" Tm
+
+.endl
+
+
+
 .lib Th
 .lib "../../../tech/ngspice/temperature.spi" Th
 

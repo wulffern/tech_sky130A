@@ -3,6 +3,11 @@
 .endl
 
 
+.lib Tm
+.option TEMP=42.4
+.endl
+
+
 .lib Th
 .option TEMP=125
 .endl

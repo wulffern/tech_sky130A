@@ -14,6 +14,8 @@ corner:
     .lib "../../../tech/ngspice/temperature.spi" Tt
   Tl: |
     .lib "../../../tech/ngspice/temperature.spi" Tl
+  Tm: |
+    .lib "../../../tech/ngspice/temperature.spi" Tm
   Th: |
     .lib "../../../tech/ngspice/temperature.spi" Th
 
