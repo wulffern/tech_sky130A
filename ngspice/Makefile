@@ -1,4 +1,4 @@
 
 
-mos:
-	python3 genMos.py > mos.spi
+corners:
+	python3 corners.py
