@@ -146,7 +146,7 @@ gds:
 
 xsch:
 	@test -d xsch || mkdir xsch
-	-xschem -q -x -b -s -n ../design/${LIB}/${CELL}.sch
+	-xschem -q -x -b -s -n ../design/${LIB}/${CELL}.sch -l xsch/xsch_${CELL}.log
 	cp xsch/${CELL}.spice xsch/${CELL}.spice.bak
 	cat xsch/${CELL}.spice.bak | perl ../tech/script/fixsubckt > xsch/${CELL}.spice
 	-rm xsch/${CELL}.spice.bak
