@@ -30,3 +30,46 @@ proc cicarray {args} {
     resumeall
 
 }
+
+ proc cicYSort {a b} {
+        set lm [lindex [tech lambda] 1]
+        select cell $a
+        set y1 [expr [lindex [box position] 1]/$lm]
+        echo $a $y1
+        select cell $b
+        set y2 [expr [lindex [box position] 1]/$lm]
+        echo $b $y2
+
+        if {$y1 < $y2} {
+            return -1
+        } elseif {$y1 > $y2} {
+            return 1
+        } else {
+            # If lengths are equal, sort alphabetically
+            return [string compare $a $b]
+        }
+    }
+
+
+proc cicPlaceVertical {args} {
+#    suspendall
+    set lm [lindex [tech lambda] 1]
+    set x [expr [lindex [box position] 0]/$lm]
+    set y [expr [lindex [box position] 1]/$lm]
+    set instances [instance list instance]
+    set sortedList [lsort -command cicYSort $instances]
+    #echo [string is list $sortedList]
+    #echo "\n"
+    foreach cell $sortedList {
+        select cell $cell
+        move to $x $y
+        pushstack
+        set fbbox [property FIXED_BBOX]
+        set m [lindex [tech lambda] 1]
+        set px [expr [lindex $fbbox 2]/$m]
+        set py [expr [lindex $fbbox 3]/$m]
+        popstack
+        set y [expr "$y + $py"]
+    }
+   # resumeall
+}
