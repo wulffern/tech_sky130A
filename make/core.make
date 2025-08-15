@@ -280,7 +280,11 @@ fixmag:
 	python3 ../tech/py/fixmag.py ../design/${LIB}/${CELL}.mag
 
 readonly:
-	chmod agu-w ../design/${LIB}/*.mag
+	chmod a-w ../design/${LIB}/*.mag
+	chmod a-w ../design/${LIB}/*.sch
+	chmod a-w ../design/${LIB}/*.sym
 
 writable:
-	chmod agu+w ../design/${LIB}/*.mag
+	chmod a+w ../design/${LIB}/*.mag
+	chmod a+w ../design/${LIB}/*.sch
+	chmod a+w ../design/${LIB}/*.sym
