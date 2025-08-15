@@ -24,7 +24,7 @@ class MagUse:
             self.library = arr[3]
 
     def __str__(self):
-        return "use " + self.cellname + " " + self.instanceName + " " + self.library + "\n"
+        return "use " + self.cellname + "  " + self.instanceName + " " + self.library + "\n"
 
 
     def getAndFixPath(self):

@@ -284,7 +284,7 @@ readonly:
 	chmod a-w ../design/${LIB}/*.sch
 	chmod a-w ../design/${LIB}/*.sym
 
-writable:
+writeable:
 	chmod a+w ../design/${LIB}/*.mag
 	chmod a+w ../design/${LIB}/*.sch
 	chmod a+w ../design/${LIB}/*.sym
