@@ -278,3 +278,9 @@ lview:
 
 fixmag:
 	python3 ../tech/py/fixmag.py ../design/${LIB}/${CELL}.mag
+
+readonly:
+	chmod agu-w ../design/${LIB}/*.mag
+
+writable:
+	chmod agu+w ../design/${LIB}/*.mag

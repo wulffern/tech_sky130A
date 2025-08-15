@@ -110,8 +110,11 @@ class MagFile:
         for line in self.buffer:
             if(line in self.use):
                 ss += str(self.use[line])
-                #print("New: ",str(self.use[line]))
-                #print("Org: ",self.use[line].line,end="")
+                nline = str(self.use[line])
+                oline = self.use[line].line
+                if(oline != line):
+                    print("New: ",nline,end="")
+                    print("Old: ",oline,end="")
             else:
                 ss += line
 
