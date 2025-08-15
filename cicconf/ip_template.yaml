@@ -272,20 +272,24 @@ create:
 
     # What
 
+
     | What            |        Cell/Name |
-    | :-              |  :-:       |
+    | :----              |  :----:       |
     | Schematic       | design/${IP}/${CELL}.sch |
     | Layout          | design/${IP}/${CELL}.mag |
 
 
     # Changelog/Plan
 
+
     | Version | Status | Comment|
     | :---| :---| :---|
     |0.1.0 | :x: | Make something |
 
 
+
     # Signal interface
+
 
     | Signal       | Direction | Domain  | Description                               |
     | :---         | :---:     | :---:   | :---                                      |
@@ -295,6 +299,7 @@ create:
 
 
     # Key parameters
+
 
     | Parameter           | Min     | Typ           | Max     | Unit  |
     | :---                | :---:     | :---:           | :---:     | :---: |
