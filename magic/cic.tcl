@@ -62,6 +62,9 @@ proc cicPlaceVertical {args} {
     #echo "\n"
     foreach cell $sortedList {
         select cell $cell
+        echo $cell
+        echo $x
+        echo $y
         move to $x $y
         pushstack
         set fbbox [property FIXED_BBOX]

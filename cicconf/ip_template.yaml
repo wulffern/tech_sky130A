@@ -115,28 +115,7 @@ create:
       gds:
         uses: analogicus/jnw-actions/.github/workflows/gds.yaml@main
 
-  .github/workflows/sim.yaml: |
-    name: SIM
 
-    on:
-      push:
-        branches: ["main"]
-        paths:
-          - 'design/**.sch'
-          - 'design/**.mag'
-          - 'design/**.sym'
-          - 'sim/**'
-          - 'info.yaml'
-          - 'config.yaml'
-      workflow_dispatch:
-
-    concurrency:
-      group: "sim"
-      cancel-in-progress: true
-
-    jobs:
-      sim:
-        uses: analogicus/jnw-actions/.github/workflows/sim.yaml@main
 
 
   .github/workflows/docs.yaml: |
@@ -246,6 +225,8 @@ create:
   work/.magicrc: |
     source ../tech/magic/.magicrc
     addpath ../design/${IP}
+    addpath ../design/JNW_ATR_SKY130A
+    addpath ../design/JNW_TR_SKY130A
 
   work/xschemrc: |
     source ../tech/xschem/xschemrc
@@ -256,7 +237,6 @@ create:
     [![DRC](../../actions/workflows/drc.yaml/badge.svg)](../../actions/workflows/drc.yaml)
     [![LVS](../../actions/workflows/lvs.yaml/badge.svg)](../../actions/workflows/lvs.yaml)
     [![DOCS](../../actions/workflows/docs.yaml/badge.svg)](../../actions/workflows/docs.yaml)
-    [![SIM](../../actions/workflows/sim.yaml/badge.svg)](../../actions/workflows/sim.yaml)
 
     # Who
     ${USER}
@@ -279,33 +259,25 @@ create:
     | Layout          | design/${IP}/${CELL}.mag |
 
 
-    # Changelog/Plan
-
-
-    | Version | Status | Comment|
-    | :---| :---| :---|
-    |0.1.0 | :x: | Make something |
-
-
 
     # Signal interface
 
 
     | Signal       | Direction | Domain  | Description                               |
     | :---         | :---:     | :---:   | :---                                      |
-    | VDD_1V8         | Input     | VDD_1V8 | Main supply                              |
-    | VSS         | Input     | Ground  |                                           |
-    | PWRUP_1V8     | Input    | VDD_1V8 | Power up the circuit                       |
+    | VDD_1V8      | Input     | VDD_1V8 | Main supply                               |
+    | VSS          | Input     | Ground  |                                           |
+    | PWRUP_1V8    | Input     | VDD_1V8 | Power up the circuit                      |
 
 
     # Key parameters
 
 
-    | Parameter           | Min     | Typ           | Max     | Unit  |
-    | :---                | :---:     | :---:           | :---:     | :---: |
+    | Parameter           | Min     | Typ             | Max     | Unit  |
+    | :---                | :---:   | :---:           | :---:   | :---: |
     | Technology          |         | Skywater 130 nm |         |       |
-    | AVDD                | 1.7    | 1.8           | 1.9    | V     |
-    | Temperature         | -40     | 27            | 125     | C     |
+    | AVDD                | 1.7     | 1.8             | 1.9     | V     |
+    | Temperature         | -40     | 27              | 125     | C     |
 
 
 do:

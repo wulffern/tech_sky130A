@@ -1,10 +1,14 @@
+
 source $env(PDK_ROOT)/sky130A/libs.tech/magic/sky130A.magicrc
 
+puts stdout "Load AICEX tech setup..."
 #- Custom macros
 
 macro Shift_XK_Up "move u 1"
 macro Shift_XK_Down "move d 1"
 macro Shift_XK_Left "move l 1"
 macro Shift_XK_Right "move r 1"
+#macro Control_XK_s "select more area"
+macro Meta_XK_s "select more area"
 
 source ../tech/magic/cic.tcl
