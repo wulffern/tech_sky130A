@@ -285,3 +285,5 @@ readonly:
 
 writable:
 	chmod a+w ../design/${LIB}/*.mag
+	chmod a+w ../design/${LIB}/*.sch
+	chmod a+w ../design/${LIB}/*.sym
