@@ -1,0 +1,301 @@
+
+dirs:
+  - design
+  - design/${IP}
+  - .github
+  - .github/workflows
+  - media
+  - sim
+  - work
+
+create:
+
+  info.yaml: |
+    library: ${IP}
+    cell: ${CELL}
+    # Your name
+    author: Anonymous
+    # Your github username
+    github: analogicus
+    # Something funny and descriptive
+    tagline: The answer is 42
+    # Your email, if you so wish
+    email: anon@anon.com
+    # Your github site, usually <github username>.github.io
+    url: analogicus.github.io
+    doc:
+      # Make docs
+      #libraries:
+      #   <library>:
+      #       - <cell>
+      #       - <cell>
+
+  config.yaml: |
+    #- Carsten's PDK. Borders, symbols, loop stability
+    cpdk:
+      remote: git@github.com:wulffern/cpdk.git
+      revision: main
+
+    #- Technology library
+    tech_sky130A:
+      remote: git@github.com:wulffern/tech_sky130A.git
+      revision: main
+
+    #- Standard cells
+    jnw_tr_sky130a:
+      remote: git@github.com:analogicus/jnw_tr_sky130A.git
+      revision: main
+
+    #- Analog transistor library
+    jnw_atr_sky130a:
+      remote: git@github.com:analogicus/jnw_atr_sky130A.git
+      revision: main
+
+  .github/workflows/lvs.yaml: |
+    name: LVS
+
+    on:
+      push:
+        branches: ["main"]
+        paths:
+          - 'design/**.mag'
+          - 'design/**.sch'
+          - 'design/**.sym'
+          - 'info.yaml'
+          - 'config.yaml'
+      workflow_dispatch:
+
+    concurrency:
+      group: "lvs"
+      cancel-in-progress: true
+
+    jobs:
+      lvs:
+        uses: analogicus/jnw-actions/.github/workflows/lvs.yaml@main
+
+  .github/workflows/drc.yaml: |
+    name: DRC
+
+    on:
+      push:
+        branches: ["main"]
+        paths:
+          - 'design/**.mag'
+          - 'info.yaml'
+          - 'config.yaml'
+      workflow_dispatch:
+
+    concurrency:
+      group: "drc"
+      cancel-in-progress: true
+
+    jobs:
+      drc:
+        uses: analogicus/jnw-actions/.github/workflows/drc.yaml@main
+
+  .github/workflows/gds.yaml: |
+    name: GDS
+
+    on:
+      push:
+        branches: ["main"]
+        paths:
+          - 'design/**.mag'
+          - 'info.yaml'
+          - 'config.yaml'
+      workflow_dispatch:
+
+    concurrency:
+      group: "gds"
+      cancel-in-progress: true
+
+    jobs:
+      gds:
+        uses: analogicus/jnw-actions/.github/workflows/gds.yaml@main
+
+  .github/workflows/docs.yaml: |
+    name: DOCS
+
+    on:
+      push:
+        branches: ["main"]
+        paths:
+          - '**.md'
+          - 'documents/**'
+          - 'media/**'
+          - 'design/**'
+          - 'info.yaml'
+          - 'config.yaml'
+      workflow_dispatch:
+
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+
+    concurrency:
+      group: "docs"
+      cancel-in-progress: true
+
+    jobs:
+      docs:
+        uses: analogicus/jnw-actions/.github/workflows/docs.yaml@main
+        permissions:
+          contents: read
+          pages: write
+          id-token: write
+
+  .gitignore: |
+    *.run
+    *.ext
+    __pycache__
+    output_*/
+    *.tcl
+    *.log
+    work/
+    .DS_store
+    *.so
+    *.pdf
+    *.gds
+    .cache
+    .local/
+    build/
+    work/lvs
+    work/gds
+    work/drc
+    work/xsch
+
+  design/${IP}/${CELL}.md: |
+    
+  design/${IP}/${CELL}.sch: |
+    v {xschem version=3.0.0 file_version=1.2 }
+    G {}
+    K {}
+    V {}
+    S {}
+    E {}
+    T {Shift-I          Insert new component
+    Shift-Z         Zoom in
+    Ctrl-Z           Zoom out
+    R                 Rotate
+    F                 Full view
+
+    Manual: https://xschem.sourceforge.io/stefan/xschem_man/xschem_man.pdf
+    } 200 -630 0 0 0.6 0.6 {}
+    C {cborder/border_xs.sym} 0 0 0 0 {
+    user="wulff"
+    company="wulff"}
+    C {devices/ipin.sym} 100 -600 0 0 {name=p1 lab=VDD_1V8}
+    C {devices/ipin.sym} 100 -100 0 0 {name=p2 lab=VSS}
+    C {devices/ipin.sym} 100 -300 0 0 {name=p3 lab=PWRUP_1V8}
+  work/Makefile: |
+
+    #- Core makefile provides the following commands:
+    # -----------------------------------------------------------
+    # ip: generate ../design/<LIB> from ../cic/ip.json
+    # gds: generate gds/<CELL>.gds
+    # cdl: generate cdl/<CELL>.cdl
+    # lvs: Check cdl/<CELL>.cdl versus ../design/<LIB>/<CELL>.mag
+    # lpe: Extract parasitics lpe/<CELL>.spi
+    # drc: Run design rule checks on ../design/<LIB>/<CELL>.mag
+    # -----------------------------------------------------------
+
+    PREFIX=
+    LIB=${IP}
+    CELL=${CELL}
+
+    #- Provide cells you want to check for the lvsall drcall commands
+    CELLS = ${CELL}
+
+    include ../tech/make/core.make
+
+  sim/Makefile: |
+    include ../tech/make/sim.make
+
+    LIB=${IP}
+    CELL=${CELL}
+
+
+  work/.magicrc: |
+    source ../tech/magic/.magicrc
+    addpath ../design/${IP}
+    addpath ../design/JNW_ATR_SKY130A
+    addpath ../design/JNW_TR_SKY130A
+
+  work/xschemrc: |
+    source ../tech/xschem/xschemrc
+    append XSCHEM_LIBRARY_PATH :../design
+  README.md: |
+
+    [![GDS](../../actions/workflows/gds.yaml/badge.svg)](../../actions/workflows/gds.yaml)
+    [![DRC](../../actions/workflows/drc.yaml/badge.svg)](../../actions/workflows/drc.yaml)
+    [![LVS](../../actions/workflows/lvs.yaml/badge.svg)](../../actions/workflows/lvs.yaml)
+    [![DOCS](../../actions/workflows/docs.yaml/badge.svg)](../../actions/workflows/docs.yaml)
+
+    # Who
+    ${USER}
+
+    # Why
+
+    <explain why you made this module>
+
+    # How
+
+    <explain short how you made this module>
+
+
+    # What
+
+
+    | What            |        Cell/Name |
+    | :----              |  :----:       |
+    | Schematic       | design/${IP}/${CELL}.sch |
+    | Layout          | design/${IP}/${CELL}.mag |
+
+
+
+    # Signal interface
+
+
+    | Signal       | Direction | Domain  | Description                               |
+    | :---         | :---:     | :---:   | :---                                      |
+    | VDD_1V8      | Input     | VDD_1V8 | Main supply                               |
+    | VSS          | Input     | Ground  |                                           |
+    | PWRUP_1V8    | Input     | VDD_1V8 | Power up the circuit                      |
+
+
+    # Key parameters
+
+
+    | Parameter           | Min     | Typ             | Max     | Unit  |
+    | :---                | :---:   | :---:           | :---:   | :---: |
+    | Technology          |         | Skywater 130 nm |         |       |
+    | AVDD                | 1.7     | 1.8             | 1.9     | V     |
+    | Temperature         | -40     | 27              | 125     | C     |
+
+
+do:
+  - ln -s ../tech_sky130A tech
+  - cd work && ln -s ../tech/magic/mos.24bit.dstyle
+  - cd work && ln -s ../tech/magic/mos.24bit.std.cmap
+  - cd sim && ln -s ../tech/cicsim/cicsim.yaml
+  - cd design && ln -s ../../jnw_tr_sky130a/design/JNW_TR_SKY130A
+  - cd design && ln -s ../../jnw_atr_sky130a/design/JNW_ATR_SKY130A
+  - git init
+  - git add .
+  - git add -f work/.magicrc
+  - git add -f work/xschemrc
+  - git add -f work/Makefile
+  - git add -f work/mos.24bit.dstyle
+  - git add -f work/mos.24bit.std.cmap
+  - git commit -m "Made ${IP}" -a
+
+
+echo: |
+
+  Actions:
+    1. Create an github repository, and set remote of ${IP}
+    2. cd ${ip}/work/; make xview
+    3. Have fun!
+
+  Good luck with ${IP}.
