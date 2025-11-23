@@ -7,7 +7,6 @@ dirs:
   - media
   - sim
   - work
-  - rtl
 
 create:
 
@@ -30,8 +29,6 @@ create:
       #   <library>:
       #       - <cell>
       #       - <cell>
-    sim:
-      # <simdir>: command
 
   config.yaml: |
     #- Carsten's PDK. Borders, symbols, loop stability
@@ -116,9 +113,6 @@ create:
       gds:
         uses: analogicus/jnw-actions/.github/workflows/gds.yaml@main
 
-
-
-
   .github/workflows/docs.yaml: |
     name: DOCS
 
@@ -187,13 +181,13 @@ create:
     F                 Full view
 
     Manual: https://xschem.sourceforge.io/stefan/xschem_man/xschem_man.pdf
-    } -460 -630 0 0 0.6 0.6 {}
-    C {cborder/border_s.sym} 520 0 0 0 {
+    } 200 -630 0 0 0.6 0.6 {}
+    C {cborder/border_xs.sym} 0 0 0 0 {
     user="wulff"
     company="wulff"}
-    C {devices/ipin.sym} -560 -840 0 0 {name=p1 lab=VDD_1V8}
-    C {devices/ipin.sym} -560 30 0 0 {name=p2 lab=VSS}
-    C {devices/ipin.sym} -560 -440 0 0 {name=p3 lab=PWRUP_1V8}
+    C {devices/ipin.sym} 100 -600 0 0 {name=p1 lab=VDD_1V8}
+    C {devices/ipin.sym} 100 -100 0 0 {name=p2 lab=VSS}
+    C {devices/ipin.sym} 100 -300 0 0 {name=p3 lab=PWRUP_1V8}
   work/Makefile: |
 
     #- Core makefile provides the following commands:
@@ -201,11 +195,10 @@ create:
     # ip: generate ../design/<LIB> from ../cic/ip.json
     # gds: generate gds/<CELL>.gds
     # cdl: generate cdl/<CELL>.cdl
-    # xlvs: Check cdl/<CELL>.cdl versus ../design/<LIB>/<CELL>.mag
+    # lvs: Check cdl/<CELL>.cdl versus ../design/<LIB>/<CELL>.mag
     # lpe: Extract parasitics lpe/<CELL>.spi
     # drc: Run design rule checks on ../design/<LIB>/<CELL>.mag
     # -----------------------------------------------------------
-
 
     PREFIX=
     LIB=${IP}

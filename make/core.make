@@ -146,7 +146,7 @@ gds:
 
 xsch:
 	@test -d xsch || mkdir xsch
-	-xschem -q -x -b -s -n ../design/${LIB}/${CELL}.sch
+	-xschem -q -x -b -s -n ../design/${LIB}/${CELL}.sch -l xsch/xsch_${CELL}.log
 	cp xsch/${CELL}.spice xsch/${CELL}.spice.bak
 	cat xsch/${CELL}.spice.bak | perl ../tech/script/fixsubckt > xsch/${CELL}.spice
 	-rm xsch/${CELL}.spice.bak
@@ -165,14 +165,14 @@ cdl:
 #- LVS commands
 #--------------------------------------------------------------------------------------
 
-xlvs: cdl
+xlvs:
 	test -d lvs || mkdir lvs
 	cat ../tech/magic/lvs.tcl|perl -pe 's#{PATH}#${LMAG}#ig;s#{CELL}#${PRCELL}#ig;' > lvs/${PRCELL}_spi.tcl
 	magic -noconsole -dnull lvs/${PRCELL}_spi.tcl > lvs/${PRCELL}_spi.log ${RDIR}
 	netgen -batch lvs "lvs/${PRCELL}.spi ${PRCELL}"  "cdl/${PRCELL}.spice ${PRCELL}" ${PDKPATH}/libs.tech/netgen/sky130A_setup.tcl lvs/${PRCELL}_lvs.log > lvs/${PRCELL}_netgen_lvs.log
 	cat lvs/${PRCELL}_lvs.log | ../tech/script/checklvs ${PRCELL} ${OPT}
 
-xflvs: cdl
+xflvs:
 	@test -d lvs || mkdir lvs
 	cat ../tech/magic/lvsf.tcl|perl -pe 's#{PATH}#${LMAG}#ig;s#{CELL}#${PRCELL}#ig;' > lvs/${PRCELL}_spi.tcl
 	magic -noconsole -dnull lvs/${PRCELL}_spi.tcl > lvs/${PRCELL}_spi.log ${RDIR}
@@ -271,3 +271,19 @@ spi:
 
 xview:
 	xschem -b  ../design/${LIB}/${CELL}.sch &
+
+
+lview:
+	magic ../design/${LIB}/${CELL}.mag &
+
+fixmag:
+	python3 ../tech/py/fixmag.py ../design/${LIB}/${CELL}.mag
+
+readonly:
+	chmod a-w ../design/${LIB}/*.mag
+	chmod a-w ../design/${LIB}/*.sch
+
+writable:
+	chmod a+w ../design/${LIB}/*.mag
+	chmod a+w ../design/${LIB}/*.sch
+	chmod a+w ../design/${LIB}/*.sym
