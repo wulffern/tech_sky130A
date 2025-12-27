@@ -254,7 +254,7 @@ create:
 
 
     | What            |        Cell/Name |
-    | :----              |  :----:       |
+    | :----              |  :----        |
     | Schematic       | design/${IP}/${CELL}.sch |
     | Layout          | design/${IP}/${CELL}.mag |
 

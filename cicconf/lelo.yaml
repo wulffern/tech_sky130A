@@ -165,6 +165,12 @@ create:
     work/drc
     work/xsch
 
+  Makefile: |
+    LIB=${IP}
+    CELL=${CELL}
+
+    include tech/make/main.make
+
   design/${IP}/${CELL}.md: |
     
   design/${IP}/${CELL}.sch: |
@@ -192,9 +198,9 @@ create:
 
     #- Core makefile provides the following commands:
     # -----------------------------------------------------------
-    # ip: generate ../design/<LIB> from ../cic/ip.json
     # gds: generate gds/<CELL>.gds
     # cdl: generate cdl/<CELL>.cdl
+    # xsch: generate xsch/<CELL>.spice
     # lvs: Check cdl/<CELL>.cdl versus ../design/<LIB>/<CELL>.mag
     # lpe: Extract parasitics lpe/<CELL>.spi
     # drc: Run design rule checks on ../design/<LIB>/<CELL>.mag
@@ -226,7 +232,6 @@ create:
     source ../tech/xschem/xschemrc
     append XSCHEM_LIBRARY_PATH :../design
   README.md: |
-
     [![GDS](../../actions/workflows/gds.yaml/badge.svg)](../../actions/workflows/gds.yaml)
     [![DRC](../../actions/workflows/drc.yaml/badge.svg)](../../actions/workflows/drc.yaml)
     [![LVS](../../actions/workflows/lvs.yaml/badge.svg)](../../actions/workflows/lvs.yaml)
@@ -248,7 +253,7 @@ create:
 
 
     | What            |        Cell/Name |
-    | :----              |  :----:       |
+    | :----           |  :----:       |
     | Schematic       | design/${IP}/${CELL}.sch |
     | Layout          | design/${IP}/${CELL}.mag |
 
@@ -260,8 +265,9 @@ create:
     | Signal       | Direction | Domain  | Description                               |
     | :---         | :---:     | :---:   | :---                                      |
     | VDD_1V8      | Input     | VDD_1V8 | Main supply                               |
+    | OSC_TEMP_1V8 | Output    | VDD_1V8 | Temperature dependent oscillation frequency|
+    | PWRUP_1V8    | Input     | VDD_1V8 | Power up the circuit
     | VSS          | Input     | Ground  |                                           |
-    | PWRUP_1V8    | Input     | VDD_1V8 | Power up the circuit                      |
 
 
     # Key parameters
@@ -289,7 +295,6 @@ do:
   - git add -f work/mos.24bit.dstyle
   - git add -f work/mos.24bit.std.cmap
   - git commit -m "Made ${IP}" -a
-
 
 echo: |
 
