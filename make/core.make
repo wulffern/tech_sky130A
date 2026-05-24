@@ -141,7 +141,7 @@ view:
 gds:
 	test -d gds || mkdir gds
 	${ECHO} "load ${NCELL}.mag\ncalma write gds/${PRCELL}.gds \nquit" > gds/${PRCELL}.tcl
-	magic -noconsole -d XR gds/${PRCELL}.tcl > gds/${PRCELL}.log  ${RDIR}
+	magic -noconsole -dnull gds/${PRCELL}.tcl > gds/${PRCELL}.log  ${RDIR}
 
 lplot:
 	test -d lplot || mkdir lplot
