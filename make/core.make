@@ -30,7 +30,7 @@ PRCELL = ${PREFIX}${CELL}
 
 PDKPATH=${PDK_ROOT}/sky130A
 
-.PHONY: drc lvs lpe gds cdl xsch ant
+.PHONY: drc lvs lpe gds cdl xsch ant lplot
 
 
 #----------------------------------------------------------------------------
@@ -141,7 +141,12 @@ view:
 gds:
 	test -d gds || mkdir gds
 	${ECHO} "load ${NCELL}.mag\ncalma write gds/${PRCELL}.gds \nquit" > gds/${PRCELL}.tcl
-	magic -noconsole -dnull gds/${PRCELL}.tcl > gds/${PRCELL}.log  ${RDIR}
+	magic -noconsole -d XR gds/${PRCELL}.tcl > gds/${PRCELL}.log  ${RDIR}
+
+lplot:
+	test -d lplot || mkdir lplot
+	test -f gds/${PRCELL}.gds || $(MAKE) gds
+	klayout -b -r ../tech/magic/render_gds.py -rd gds=gds/${PRCELL}.gds -rd png=lplot/${PRCELL}.png > lplot/${PRCELL}.log 2>&1
 
 
 xsch:

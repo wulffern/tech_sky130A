@@ -19,7 +19,7 @@
         "DMYPO"  : { "alias" : "poly","number" : 30,  "datatype" : -1,  "material" : "poly",      "previous" : "",  "next" : "CO", "pin" : "PO_pin" , "color" : "red"},
         "PO"  : { "alias" : "poly","number" : 30,  "datatype" : -1,  "material" : "poly",      "previous" : "",  "next" : "CO", "pin" : "PO_pin" , "color" : "red"},
         "OP"  : { "alias" : "","number" : 30,  "datatype" : -1,  "material" : "poly",      "previous" : "",  "next" : "CO", "pin" : "PO_pin" , "color" : "yellow"},
-        "POB"  : { "alias" : "poly","number" : 30,  "datatype" : -1,  "material" : "implant",      "previous" : "",  "next" : "CO", "pin" : "PO_pin" , "color" : "red"},
+        "POB"  : { "alias" : "poly","number" : 30,  "datatype" : -1,  "material" : "poly",      "previous" : "",  "next" : "CO", "pin" : "PO_pin" , "color" : "red"},
 
         "POXR"  : { "alias" : "xpolyres","number" : 30,  "datatype" : -1,  "material" : "poly",      "previous" : "",  "next" : "CO", "pin" : "PO_pin" , "color" : "red"},
         "CPOXR"  : { "alias" : "xpolycontact","number" : 30,  "datatype" : -1,  "material" : "poly",      "previous" : "",  "next" : "CO", "pin" : "PO_pin" , "color" : "red"},
@@ -82,7 +82,7 @@
 
 
 
-        "TXT" : { "alias" : "","number" : 58, "datatype" :-1 , "material" : "marker" , "color" : "black","fill" : "fill"}
+        "TXT" : { "alias" : "","number" : 58, "datatype" :-1 , "material" : "marker" , "color" : "white","fill" : "fill"}
     },
     "technology" :{
         "gamma" : 100,
