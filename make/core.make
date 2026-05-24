@@ -146,7 +146,7 @@ gds:
 lplot:
 	test -d lplot || mkdir lplot
 	test -f gds/${PRCELL}.gds || $(MAKE) gds
-	klayout -b -r ../tech/magic/render_gds.py -rd gds=gds/${PRCELL}.gds -rd png=lplot/${PRCELL}.png > lplot/${PRCELL}.log 2>&1
+	python3 ../tech/magic/render_gds.py gds/${PRCELL}.gds lplot/${PRCELL}.svg > lplot/${PRCELL}.log 2>&1
 
 
 xsch:
