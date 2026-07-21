@@ -13,7 +13,7 @@ docs-docker:
 		-v $(abspath ..):/home/aicex/ip \
 		-w /home/aicex/ip/$(notdir $(CURDIR)) \
 		$(AICEX_DOCKER_IMAGE) \
-		bash -lc 'git config --global --add safe.directory "$$PWD" && make docs'
+		bash -lc 'export PATH=/opt/eda/python3/bin:/opt/eda/bin:$$PATH && git config --global --add safe.directory "$$PWD" && make docs'
 
 JEKYLL_VERSION=3.8
 SITE=${shell pwd}/docs
