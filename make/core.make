@@ -30,7 +30,7 @@ PRCELL = ${PREFIX}${CELL}
 
 PDKPATH=${PDK_ROOT}/sky130A
 
-.PHONY: drc lvs lpe gds cdl xsch ant lplot precheck preflight
+.PHONY: drc lvs lpe gds cdl xsch ant lplot precheck preflight matchports
 
 
 #----------------------------------------------------------------------------
@@ -170,11 +170,32 @@ cdl:
 #- LVS commands
 #--------------------------------------------------------------------------------------
 
+# Mixed-signal designs define VERILOG_FILE (e.g. VERILOG_FILE=../rtl/foo.pnl.v)
+# in the IP Makefile. When set, the digital block is only defined in that
+# gate-level verilog, so it must be read into the *source* netlist -- otherwise
+# netgen sees an undefined subcircuit, creates an empty placeholder, and the top
+# cell fails pin matching on the resulting port symmetry. Reading the verilog
+# (plus the sky130 standard-cell spice it instantiates) fills in the real
+# devices so LVS can match.
+define LVS_NETGEN_TCL
+set layout [readnet spice lvs/${PRCELL}.spi]
+set source [readnet spice cdl/${PRCELL}.spice]
+readnet spice ${PDKPATH}/libs.ref/sky130_fd_sc_hd/spice/sky130_fd_sc_hd.spice $$source
+readnet verilog ${VERILOG_FILE} $$source
+lvs "$$layout ${PRCELL}" "$$source ${PRCELL}" ${PDKPATH}/libs.tech/netgen/sky130A_setup.tcl lvs/${PRCELL}_lvs.log > lvs/${PRCELL}_netgen_lvs.log
+endef
+export LVS_NETGEN_TCL
+
 xlvs:
 	test -d lvs || mkdir lvs
 	cat ../tech/magic/lvs.tcl|perl -pe 's#{PATH}#${LMAG}#ig;s#{CELL}#${PRCELL}#ig;' > lvs/${PRCELL}_spi.tcl
 	magic -noconsole -dnull lvs/${PRCELL}_spi.tcl > lvs/${PRCELL}_spi.log ${RDIR}
+ifdef VERILOG_FILE
+	echo "$$LVS_NETGEN_TCL" > lvs/${PRCELL}_netgen.tcl
+	netgen -batch source lvs/${PRCELL}_netgen.tcl
+else
 	netgen -batch lvs "lvs/${PRCELL}.spi ${PRCELL}"  "cdl/${PRCELL}.spice ${PRCELL}" ${PDKPATH}/libs.tech/netgen/sky130A_setup.tcl lvs/${PRCELL}_lvs.log > lvs/${PRCELL}_netgen_lvs.log
+endif
 	cat lvs/${PRCELL}_lvs.log | ../tech/script/checklvs ${PRCELL} ${OPT}
 
 xflvs:
@@ -183,6 +204,13 @@ xflvs:
 	magic -noconsole -dnull lvs/${PRCELL}_spi.tcl > lvs/${PRCELL}_spi.log ${RDIR}
 	netgen -batch lvs "lvs/${PRCELL}.spi ${PRCELL}"  "cdl/${PRCELL}.spice ${PRCELL}" ${PDKPATH}/libs.tech/netgen/sky130A_setup.tcl lvs/${PRCELL}_lvs.log > lvs/${PRCELL}_netgen_lvs.log
 	cat lvs/${PRCELL}_lvs.log | ../tech/script/checklvs ${PRCELL} ${OPT}
+
+# Renumber the layout's port indices so the extracted netlist pin order matches
+# the schematic .subckt (cdl). Only the 'port N' indices in the .mag change.
+# Dry-run by default; apply with:  make matchports MPOPT=--apply
+# Reload the cell in magic and re-run lvs afterwards.
+matchports: cdl
+	python3 ../tech/py/matchports.py --mag ${LMAG}/${PRCELL}.mag --ref cdl/${PRCELL}.spice ${MPOPT}
 
 lvs: xlvs
 
