@@ -30,7 +30,7 @@ PRCELL = ${PREFIX}${CELL}
 
 PDKPATH=${PDK_ROOT}/sky130A
 
-.PHONY: drc lvs lpe gds cdl xsch ant lplot precheck
+.PHONY: drc lvs lpe gds cdl xsch ant lplot precheck preflight
 
 
 #----------------------------------------------------------------------------
@@ -297,9 +297,17 @@ writable:
 DATE = $(shell date "+%Y-%m-%d_%H%M")
 
 TAPEOUT=../tapeout
-deliver: cdl gds lvs drc ant
+# Fast pre-flight validation. Runs first so a missing tapeout dir aborts the
+# delivery *before* the multi-minute lvs/drc/ant checks. deps2tapeout pins the
+# exact dependency SHAs and lists any uncommitted files as a warning (pass
+# DEPS_OPT=--fail-on-dirty to hard-fail on a dirty tree).
+preflight:
+	@test -d ${TAPEOUT} || { echo "ERROR: no ${TAPEOUT} dir. Add the tapeout submodule."; exit 1; }
+	@test -d ${TAPEOUT}/ip || mkdir -p ${TAPEOUT}/ip
+	python3 ../tech/py/deps2tapeout.py --ip-root .. --out ${TAPEOUT}/ip/config.yaml ${DEPS_OPT}
+
+deliver: preflight cdl gds lvs drc ant
 	-${MAKE} lpe LIB=${LIB} CELL=${CELL}
-	@test -d ${TAPEOUT} || echo "No tapeout dir. You need to add a submodule for the tapeout repository!" || exit
 	@test -d ${TAPEOUT}/gds || mkdir ${TAPEOUT}/gds
 	@test -d ${TAPEOUT}/lef || mkdir ${TAPEOUT}/lef
 	@test -d ${TAPEOUT}/spi || mkdir ${TAPEOUT}/spi
@@ -310,15 +318,13 @@ deliver: cdl gds lvs drc ant
 	cp lvs/${CELL}_lvs.log ${TAPEOUT}/reports/lvs.log
 	-cp lpe/${CELL}_lpe.spi ${TAPEOUT}/spi
 	cp xsch/${CELL}.spice ${TAPEOUT}/spi
-	-cp lpe/${CELL}_lvs.log ${TAPEOUTS}/reports/lpe_lvs.log
+	-cp lpe/${CELL}_lvs.log ${TAPEOUT}/reports/lpe_lvs.log
 	cat ../tech/magic/deliver.tcl|perl -pe 's#{LIB}#${LIB}#ig;s#{CELL}#${CELL}#ig;' > deliver.tcl
 	magic -noconsole -dnull deliver.tcl
 	cp gds/${CELL}.gds ${TAPEOUT}/gds/${CELL}.gds
 	@test -d ${TAPEOUT}/docs || mkdir ${TAPEOUT}/docs
 	python3 ../tech/py/readme2tapeout.py --readme ../README.md --out ${TAPEOUT}/docs/info.md
 	pandoc -s --embed-resources --metadata title="${CELL}" ${TAPEOUT}/docs/info.md -o ${TAPEOUT}/docs/info.html
-	@test -d ${TAPEOUT}/ip || mkdir ${TAPEOUT}/ip
-	python3 ../tech/py/deps2tapeout.py --ip-root .. --out ${TAPEOUT}/ip/config.yaml
 
 precheck:
 	bash ../tech/make/tt_precheck.sh ${CELL} ${TAPEOUT}

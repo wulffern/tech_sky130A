@@ -10,14 +10,17 @@ Each link target lives in its own git repository (managed by cicconf). For a
 reproducible delivery we want to know the *exact* commit of every dependency
 that went into the shipped GDS -- not just the branch name cicconf tracks.
 
-This script walks the ``tech`` symlink and every symlink under ``design/``,
+This script walks the ``tech`` symlink and every symlink under ``design/`` (plus
+any ``--extra`` repos such as ``cpdk`` that are not reachable through a symlink),
 resolves each to its git repository, and writes a cicconf-style ``config.yaml``
-into the tapeout folder. The output matches the format cicconf reads (an
-``options`` block plus ``name: {remote, revision}`` entries with ``#-``
-description comments) so ``cicconf clone`` can reconstruct the exact
-environment -- except ``revision`` is pinned to a commit SHA instead of a
-branch name. Repositories with uncommitted changes are warned about (the pinned
-SHA does not capture a dirty tree).
+into the tapeout folder. The output is a dependency *lock*: ``name: {remote,
+revision}`` entries with ``#-`` description comments, where ``revision`` is
+pinned to the exact commit SHA instead of a branch name, so ``cicconf clone``
+can reconstruct the exact environment. The monorepo ``options`` block (template/
+project/technology) is intentionally omitted -- this is a lock file, not a full
+cicconf project config. Repositories with uncommitted changes are listed as a
+warning (the pinned SHA does not capture a dirty tree); pass ``--fail-on-dirty``
+to turn that into a hard error for a strictly reproducible delivery.
 """
 
 import os
@@ -44,11 +47,24 @@ def repo_info(path):
     top = git(path, "rev-parse", "--show-toplevel")
     if not top:
         return None
+    # Note: git() strips the whole output, which would eat the leading status
+    # column of the first porcelain line -- read it raw so every line keeps its
+    # "XY PATH" columns intact. --untracked-files=no ignores new/untracked (??)
+    # files: only tracked changes count towards "dirty".
+    try:
+        raw = subprocess.run(["git", "-C", top, "status", "--porcelain",
+                              "--untracked-files=no"],
+                             stderr=subprocess.DEVNULL, text=True,
+                             stdout=subprocess.PIPE).stdout
+    except FileNotFoundError:
+        raw = ""
+    changes = [ln[:2].strip() + " " + ln[3:] for ln in raw.splitlines() if ln.strip()]
     return {
         "name": os.path.basename(top),
         "remote": git(top, "remote", "get-url", "origin"),
         "revision": git(top, "rev-parse", "HEAD"),
-        "dirty": bool(git(top, "status", "--porcelain")),
+        "dirty": bool(changes),
+        "changes": changes,
     }
 
 
@@ -116,16 +132,21 @@ def read_cicconf(path):
                    "(default: <ip-root>/../config.yaml).")
 @click.option("--include-self/--no-include-self", default=True, show_default=True,
               help="Also pin the IP repository that owns this design.")
-@click.option("--fail-on-dirty/--no-fail-on-dirty", default=True, show_default=True,
-              help="Abort if any dependency has uncommitted changes (the pinned "
-                   "SHA would not capture a dirty tree).")
-def main(ip_root, out, source_config, include_self, fail_on_dirty):
+@click.option("--extra", multiple=True, default=["../cpdk"], show_default=True,
+              help="Extra repo paths (relative to --ip-root) to pin that are not "
+                   "reachable via the tech/design symlinks, e.g. cpdk. Repeatable.")
+@click.option("--fail-on-dirty/--no-fail-on-dirty", default=False, show_default=True,
+              help="Abort if any dependency has uncommitted changes. Off by "
+                   "default (dirty trees are common while iterating); the "
+                   "modified files are listed as a warning instead. Turn on for "
+                   "a strictly reproducible delivery.")
+def main(ip_root, out, source_config, include_self, extra, fail_on_dirty):
     """Write a cicconf config.yaml pinning exact dependency commit SHAs."""
     ip_root = os.path.abspath(ip_root)
     monorepo_cfg = source_config or os.path.join(ip_root, "..", "config.yaml")
     ip_cfg = os.path.join(ip_root, "config.yaml")
 
-    options, descs = read_cicconf(monorepo_cfg)
+    _, descs = read_cicconf(monorepo_cfg)
     _, ip_descs = read_cicconf(ip_cfg)
     descs.update(ip_descs)   # IP-level descriptions win
 
@@ -140,6 +161,13 @@ def main(ip_root, out, source_config, include_self, fail_on_dirty):
 
     if include_self:
         add(repo_info(ip_root))
+    for e in extra:
+        p = os.path.join(ip_root, e)
+        if os.path.exists(p):
+            add(repo_info(os.path.realpath(p)))
+        else:
+            click.secho(f"  note: extra dep '{e}' not found at {p}, skipping",
+                        fg="yellow")
     for _, target in iter_links(ip_root):
         add(repo_info(os.path.realpath(target)))
 
@@ -153,7 +181,9 @@ def main(ip_root, out, source_config, include_self, fail_on_dirty):
             dirty.append(info["name"])
         state = "DIRTY" if info["dirty"] else "clean"
         click.secho(f"  {info['name']:24s} {str(info['revision'])[:12]}  [{state}]",
-                    fg="red" if info["dirty"] else "green")
+                    fg="yellow" if info["dirty"] else "green")
+        for change in info.get("changes", []):
+            click.secho(f"      {change}", fg="yellow")
         if info["remote"] is None:
             click.secho(f"  warn: {info['name']} has no 'origin' remote", fg="yellow")
 
@@ -161,17 +191,13 @@ def main(ip_root, out, source_config, include_self, fail_on_dirty):
         raise click.ClickException(
             "uncommitted changes in: " + ", ".join(dirty) + "\n"
             "Commit (and push) these before delivery so the pinned SHAs are "
-            "reproducible, or pass --no-fail-on-dirty to pin the current HEAD "
+            "reproducible, or drop --fail-on-dirty to pin the current HEAD "
             "anyway.")
 
-    # Build the file text in cicconf style (comments + options + entries).
+    # Build the file text in cicconf style (comment + entries). The 'options'
+    # block from the monorepo config is intentionally omitted: this file is a
+    # dependency lock, not a full cicconf project config.
     chunks = []
-    if options is not None:
-        chunks.append("#" + "-" * 55 + "\n# Options to cicconf\n#" + "-" * 55 +
-                      "\n" + yaml.safe_dump({"options": options},
-                                            sort_keys=False,
-                                            default_flow_style=False).rstrip())
-
     for info in order:
         block = ""
         if info["name"] in descs:
@@ -191,8 +217,9 @@ def main(ip_root, out, source_config, include_self, fail_on_dirty):
 
     click.echo(f"Wrote {out} ({len(order)} dependencies)")
     if dirty:
-        click.secho("warn: pinned with uncommitted changes (dirty: " +
-                    ", ".join(dirty) + ")", fg="red")
+        click.secho("warn: pinned SHAs do not capture uncommitted changes in: " +
+                    ", ".join(dirty) + " (commit for a reproducible delivery)",
+                    fg="yellow")
 
 
 if __name__ == "__main__":
