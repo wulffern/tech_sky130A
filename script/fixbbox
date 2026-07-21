@@ -1,0 +1,126 @@
+#!/usr/bin/env python3
+#
+# Fix the FIXED_BBOX property of Magic cells so it matches the cell's true
+# geometric bounding box.  A stale/oversized FIXED_BBOX makes Magic report a
+# wrong cell extent, which then overhangs the parent / tile.
+#
+# The true bbox is computed by Magic itself (`select top cell; box values`) so
+# magscale, hierarchy and arrays are handled correctly.  We let Magic write the
+# value to a throw-away copy, read it back (already in the file's own units),
+# and then patch ONLY the `string FIXED_BBOX` line of the original file.  This
+# avoids Magic's full re-serialization, which would otherwise upgrade the file
+# format (rename layers, regenerate the checkpaint layer, ...).
+#
+# Usage (run from the IP work/ directory):
+#     fixbbox <lib_mag_dir> [exclude_cell] [--apply]
+#
+# Without --apply it only reports what would change (dry-run).
+# The exclude_cell (typically the top tile cell) keeps its fixed tile size.
+# Only real files inside <lib_mag_dir> are ever written; symlinked cells (which
+# point at shared library sources outside the IP) are always skipped.
+
+import glob
+import os
+import re
+import subprocess
+import sys
+
+GREEN = "\033[32m"
+YELLOW = "\033[33m"
+RED = "\033[31m"
+RESET = "\033[0m"
+
+BBOX_RE = re.compile(r"string FIXED_BBOX (-?\d+ -?\d+ -?\d+ -?\d+)")
+
+
+def read_fixed(text):
+    m = BBOX_RE.search(text)
+    return m.group(1) if m else None
+
+
+def set_fixed(text, value):
+    """Return `text` with the FIXED_BBOX line set to `value` (added if absent)."""
+    if BBOX_RE.search(text):
+        return BBOX_RE.sub(f"string FIXED_BBOX {value}", text, count=1)
+    line = f"string FIXED_BBOX {value}\n"
+    if "<< properties >>\n" in text:
+        return text.replace("<< properties >>\n", "<< properties >>\n" + line, 1)
+    # No properties section: create one just before "<< end >>".
+    return text.replace("<< end >>", "<< properties >>\n" + line + "<< end >>", 1)
+
+
+def magic_fixed_bbox(magpath):
+    """Ask magic to compute FIXED_BBOX for `magpath`, returned in file units.
+
+    Magic is run on the real file (so child cells resolve), it writes the new
+    value, we read it back, then the caller restores the original bytes.
+    """
+    orig = open(magpath).read()
+    tcl = ("drc off\nsnap internal\n"
+           f"load {magpath}\nselect top cell\nset bb [box values]\n"
+           f'if {{$bb ne ""}} {{property FIXED_BBOX $bb; save {magpath}}}\n'
+           "quit -noprompt\n")
+    tclpath = magpath + ".fixbbox.tcl"
+    open(tclpath, "w").write(tcl)
+    try:
+        subprocess.run(["magic", "-noconsole", "-dnull", "-rcfile", ".magicrc",
+                        tclpath], capture_output=True, text=True)
+        new = read_fixed(open(magpath).read())
+    finally:
+        os.unlink(tclpath)
+        open(magpath, "w").write(orig)   # always restore pristine file
+    return orig, new
+
+
+def main():
+    args = [a for a in sys.argv[1:] if not a.startswith("--")]
+    apply = "--apply" in sys.argv
+    if not args:
+        print("Usage: fixbbox <lib_mag_dir> [exclude_cell] [--apply]")
+        return 1
+    libdir = args[0].rstrip("/")
+    exclude = args[1] if len(args) > 1 else None
+
+    cells = sorted(
+        os.path.basename(p)[:-4] for p in glob.glob(os.path.join(libdir, "*.mag"))
+        if os.path.basename(p)[:-4] != exclude
+    )
+    if not cells:
+        print("fixbbox: no cells found in", libdir)
+        return 0
+
+    changed = 0
+    for c in cells:
+        magpath = os.path.join(libdir, c + ".mag")
+        # Never touch symlinked cells: they point at shared library sources
+        # that live outside this IP and must not be modified.
+        if os.path.islink(magpath):
+            print(f"  {c:<40} {YELLOW}symlink, skipped{RESET}")
+            continue
+        orig, new = magic_fixed_bbox(magpath)
+        cur = read_fixed(orig) or "(none)"
+        if not new:
+            print(f"  {c:<40} {RED}could not compute bbox{RESET}")
+            continue
+        if new == cur:
+            print(f"  {c:<40} [{cur}]  ok")
+            continue
+        changed += 1
+        if apply:
+            open(magpath, "w").write(set_fixed(orig, new))
+            tag = f"{GREEN}fixed{RESET}"
+        else:
+            tag = f"{YELLOW}would fix{RESET}"
+        print(f"  {c:<40} [{cur}] -> [{new}]  {tag}")
+
+    if not apply and changed:
+        print(f"\n{changed} cell(s) need fixing. Re-run with --apply to write.")
+    elif apply:
+        print(f"\nUpdated {changed} cell(s).")
+    else:
+        print("\nAll FIXED_BBOX values already match geometry.")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

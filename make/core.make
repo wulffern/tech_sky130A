@@ -30,7 +30,7 @@ PRCELL = ${PREFIX}${CELL}
 
 PDKPATH=${PDK_ROOT}/sky130A
 
-.PHONY: drc lvs lpe gds cdl xsch ant lplot precheck preflight matchports
+.PHONY: drc lvs lpe gds cdl xsch ant lplot precheck preflight matchports fixbbox
 
 
 #----------------------------------------------------------------------------
@@ -212,6 +212,13 @@ xflvs:
 matchports: cdl
 	python3 ../tech/py/matchports.py --mag ${LMAG}/${PRCELL}.mag --ref cdl/${PRCELL}.spice ${MPOPT}
 
+# Fix the FIXED_BBOX property of every cell in design/${LIB} to match its true
+# geometric bounding box (read from magic). The top tile cell (${PRCELL}) is
+# left untouched so its fixed tile size is preserved. Only LIB mags are written.
+# Dry-run by default; apply with:  make fixbbox BBOPT=--apply
+fixbbox:
+	python3 ../tech/script/fixbbox ${LMAG} ${PRCELL} ${BBOPT}
+
 lvs: xlvs
 
 #--------------------------------------------------------------------------------------
@@ -224,7 +231,10 @@ drc:
 	@tail -n 1 drc/${PRCELL}_drc.log| perl -ne "\$$exit = 0;use Term::ANSIColor;print(sprintf(\"%-40s\t[ \",${PRCELL}));if(m/:\s+0\n/ig){print(color('green').'DRC OK  '.color('reset'));}else{print(color('red').'DRC FAIL'.color('reset'));\$$exit = 1;};print(\" ]\n\");exit \$$exit;" || tail -n 10 drc/${PRCELL}_drc.log
 
 kdrc:
+	@test -d drc || mkdir drc
+	@-rm drc/${PRCELL}_drc.xml
 	klayout -b -r ${PDK_ROOT}/sky130A/libs.tech/klayout/drc/sky130A_mr.drc  -rd input=gds/${PRCELL}.gds -rd topcell=${PRCELL} -rd report=../drc/${PRCELL}_drc.xml -rd thr=8 -rd feol=true -rd beol=true -rd offgrid=true  >& drc/${PRCELL}_kdrc.log
+	@python3 ../tech/script/checkkdrc drc/${PRCELL}_drc.xml ${PRCELL} || true
 
 #--------------------------------------------------------------------------------------
 #- Antenna
