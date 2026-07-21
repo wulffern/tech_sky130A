@@ -59,13 +59,27 @@ def repo_info(path):
     except FileNotFoundError:
         raw = ""
     changes = [ln[:2].strip() + " " + ln[3:] for ln in raw.splitlines() if ln.strip()]
+    head = git(top, "rev-parse", "HEAD")
     return {
         "name": os.path.basename(top),
         "remote": git(top, "remote", "get-url", "origin"),
-        "revision": git(top, "rev-parse", "HEAD"),
+        "revision": head,
         "dirty": bool(changes),
         "changes": changes,
+        "on_origin": on_origin(top, head),
     }
+
+
+def on_origin(repo, sha):
+    """True if *sha* is reachable from a remote-tracking branch under origin/.
+
+    Uses the local remote-tracking refs (no network fetch), so it reflects what
+    the caller last saw on origin. A False means the commit hasn't been pushed
+    and ``cicconf clone`` could not reproduce this pinned revision.
+    """
+    if not sha:
+        return False
+    return bool(git(repo, "branch", "-r", "--contains", sha, "--list", "origin/*"))
 
 
 def iter_links(ip_root):
@@ -174,23 +188,33 @@ def main(ip_root, out, source_config, include_self, extra, fail_on_dirty):
     if not order:
         raise click.ClickException(f"No dependency links found under {ip_root}")
 
-    # Report status and detect dirty / remote-less repositories.
+    # Report status and detect dirty / unpushed / remote-less repositories.
     dirty = []
+    unpushed = []
     for info in order:
         if info["dirty"]:
             dirty.append(info["name"])
+        if not info["on_origin"]:
+            unpushed.append(info["name"])
         state = "DIRTY" if info["dirty"] else "clean"
-        click.secho(f"  {info['name']:24s} {str(info['revision'])[:12]}  [{state}]",
-                    fg="yellow" if info["dirty"] else "green")
+        # Unpushed SHA is the worst case (unreproducible) -> red; dirty -> yellow.
+        color = "red" if not info["on_origin"] else ("yellow" if info["dirty"] else "green")
+        tag = "" if info["on_origin"] else "  NOT ON ORIGIN"
+        click.secho(f"  {info['name']:24s} {str(info['revision'])[:12]}  [{state}]{tag}",
+                    fg=color)
         for change in info.get("changes", []):
             click.secho(f"      {change}", fg="yellow")
         if info["remote"] is None:
             click.secho(f"  warn: {info['name']} has no 'origin' remote", fg="yellow")
 
-    if dirty and fail_on_dirty:
+    if fail_on_dirty and (dirty or unpushed):
+        msg = ""
+        if dirty:
+            msg += "uncommitted changes in: " + ", ".join(dirty) + "\n"
+        if unpushed:
+            msg += "unpushed SHA (not on origin) in: " + ", ".join(unpushed) + "\n"
         raise click.ClickException(
-            "uncommitted changes in: " + ", ".join(dirty) + "\n"
-            "Commit (and push) these before delivery so the pinned SHAs are "
+            msg + "Commit and push these before delivery so the pinned SHAs are "
             "reproducible, or drop --fail-on-dirty to pin the current HEAD "
             "anyway.")
 
@@ -220,6 +244,10 @@ def main(ip_root, out, source_config, include_self, extra, fail_on_dirty):
         click.secho("warn: pinned SHAs do not capture uncommitted changes in: " +
                     ", ".join(dirty) + " (commit for a reproducible delivery)",
                     fg="yellow")
+    if unpushed:
+        click.secho("ERROR: pinned SHA not on origin in: " + ", ".join(unpushed) +
+                    " -- push these commits or cicconf clone cannot reproduce "
+                    "this delivery", fg="red")
 
 
 if __name__ == "__main__":
