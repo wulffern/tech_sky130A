@@ -42,13 +42,13 @@ create:
       revision: main
 
     #- Standard cells
-    jnw_tr_sky130a:
-      remote: git@github.com:analogicus/jnw_tr_sky130A.git
+    rey_tr_sky130a:
+      remote: git@github.com:analogicus/rey_tr_sky130A.git
       revision: main
 
     #- Analog transistor library
-    jnw_atr_sky130a:
-      remote: git@github.com:analogicus/jnw_atr_sky130A.git
+    rey_atr_sky130a:
+      remote: git@github.com:analogicus/rey_atr_sky130A.git
       revision: main
 
   .github/workflows/lvs.yaml: |
@@ -225,8 +225,8 @@ create:
   work/.magicrc: |
     source ../tech/magic/.magicrc
     addpath ../design/${IP}
-    addpath ../design/JNW_ATR_SKY130A
-    addpath ../design/JNW_TR_SKY130A
+    addpath ../design/REY_ATR_SKY130A
+    addpath ../design/REY_TR_SKY130A
 
   work/xschemrc: |
     source ../tech/xschem/xschemrc
@@ -258,7 +258,6 @@ create:
     | Layout          | design/${IP}/${CELL}.mag |
 
 
-
     # Signal interface
 
 
@@ -285,8 +284,8 @@ do:
   - cd work && ln -s ../tech/magic/mos.24bit.dstyle
   - cd work && ln -s ../tech/magic/mos.24bit.std.cmap
   - cd sim && ln -s ../tech/cicsim/cicsim.yaml
-  - cd design && ln -s ../../jnw_tr_sky130a/design/JNW_TR_SKY130A
-  - cd design && ln -s ../../jnw_atr_sky130a/design/JNW_ATR_SKY130A
+  - cd design && ln -s ../../rey_tr_sky130a/design/REY_TR_SKY130A
+  - cd design && ln -s ../../rey_atr_sky130a/design/REY_ATR_SKY130A
   - git init
   - git add .
   - git add -f work/.magicrc
