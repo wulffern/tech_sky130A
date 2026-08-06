@@ -30,7 +30,7 @@ PRCELL = ${PREFIX}${CELL}
 
 PDKPATH=${PDK_ROOT}/sky130A
 
-.PHONY: drc lvs lpe gds cdl xsch ant
+.PHONY: drc lvs lpe gds cdl xsch ant lplot precheck preflight matchports fixbbox
 
 
 #----------------------------------------------------------------------------
@@ -59,7 +59,7 @@ NCELL=${LMAG}/${PRCELL}
 MCELL=${NCELL}.mag
 
 #- Options
-OPT=
+OPT?=
 
 SUB=BULKN
 
@@ -143,6 +143,11 @@ gds:
 	${ECHO} "load ${NCELL}.mag\ncalma write gds/${PRCELL}.gds \nquit" > gds/${PRCELL}.tcl
 	magic -noconsole -dnull gds/${PRCELL}.tcl > gds/${PRCELL}.log  ${RDIR}
 
+lplot:
+	test -d lplot || mkdir lplot
+	test -f gds/${PRCELL}.gds || $(MAKE) gds
+	python3 ../tech/magic/render_gds.py gds/${PRCELL}.gds lplot/${PRCELL}.svg > lplot/${PRCELL}.log 2>&1
+
 
 xsch:
 	@test -d xsch || mkdir xsch
@@ -165,11 +170,42 @@ cdl:
 #- LVS commands
 #--------------------------------------------------------------------------------------
 
+# Mixed-signal designs define VERILOG_FILE (e.g. VERILOG_FILE=../rtl/foo.pnl.v)
+# in the IP Makefile. When set, the digital block is only defined in that
+# gate-level verilog, so it must be read into the *source* netlist -- otherwise
+# netgen sees an undefined subcircuit, creates an empty placeholder, and the top
+# cell fails pin matching on the resulting port symmetry. Reading the verilog
+# (plus the sky130 standard-cell spice it instantiates) fills in the real
+# devices so LVS can match.
+define LVS_NETGEN_TCL
+set layout [readnet spice lvs/${PRCELL}.spi]
+set source [readnet spice cdl/${PRCELL}.spice]
+readnet spice ${PDKPATH}/libs.ref/sky130_fd_sc_hd/spice/sky130_fd_sc_hd.spice $$source
+readnet verilog ${VERILOG_FILE} $$source
+lvs "$$layout ${PRCELL}" "$$source ${PRCELL}" ${PDKPATH}/libs.tech/netgen/sky130A_setup.tcl lvs/${PRCELL}_lvs.log > lvs/${PRCELL}_netgen_lvs.log
+endef
+export LVS_NETGEN_TCL
+
+#- Which extraction recipe feeds netgen. lvs.tcl extracts hierarchically,
+#- lvsflat.tcl flattens at netlist level so tap-less leaf cells and
+#- cross-cell connectivity are judged by geometry. Set in the IP's
+#- work/Makefile, e.g. LVSTCL=lvsflat.tcl
+LVSTCL?=lvs.tcl
+
+#- Which netgen setup drives the comparison. Override to layer project
+#- specific tolerances on top of the PDK setup
+NETGENSETUP?=${PDKPATH}/libs.tech/netgen/sky130A_setup.tcl
+
 xlvs:
 	test -d lvs || mkdir lvs
-	cat ../tech/magic/lvs.tcl|perl -pe 's#{PATH}#${LMAG}#ig;s#{CELL}#${PRCELL}#ig;' > lvs/${PRCELL}_spi.tcl
+	cat ../tech/magic/${LVSTCL}|perl -pe 's#{PATH}#${LMAG}#ig;s#{CELL}#${PRCELL}#ig;' > lvs/${PRCELL}_spi.tcl
 	magic -noconsole -dnull lvs/${PRCELL}_spi.tcl > lvs/${PRCELL}_spi.log ${RDIR}
-	netgen -batch lvs "lvs/${PRCELL}.spi ${PRCELL}"  "cdl/${PRCELL}.spice ${PRCELL}" ${PDKPATH}/libs.tech/netgen/sky130A_setup.tcl lvs/${PRCELL}_lvs.log > lvs/${PRCELL}_netgen_lvs.log
+ifdef VERILOG_FILE
+	echo "$$LVS_NETGEN_TCL" > lvs/${PRCELL}_netgen.tcl
+	netgen -batch source lvs/${PRCELL}_netgen.tcl
+else
+	netgen -batch lvs "lvs/${PRCELL}.spi ${PRCELL}"  "cdl/${PRCELL}.spice ${PRCELL}" ${NETGENSETUP} lvs/${PRCELL}_lvs.log > lvs/${PRCELL}_netgen_lvs.log
+endif
 	cat lvs/${PRCELL}_lvs.log | ../tech/script/checklvs ${PRCELL} ${OPT}
 
 xflvs:
@@ -178,6 +214,20 @@ xflvs:
 	magic -noconsole -dnull lvs/${PRCELL}_spi.tcl > lvs/${PRCELL}_spi.log ${RDIR}
 	netgen -batch lvs "lvs/${PRCELL}.spi ${PRCELL}"  "cdl/${PRCELL}.spice ${PRCELL}" ${PDKPATH}/libs.tech/netgen/sky130A_setup.tcl lvs/${PRCELL}_lvs.log > lvs/${PRCELL}_netgen_lvs.log
 	cat lvs/${PRCELL}_lvs.log | ../tech/script/checklvs ${PRCELL} ${OPT}
+
+# Renumber the layout's port indices so the extracted netlist pin order matches
+# the schematic .subckt (cdl). Only the 'port N' indices in the .mag change.
+# Dry-run by default; apply with:  make matchports MPOPT=--apply
+# Reload the cell in magic and re-run lvs afterwards.
+matchports: cdl
+	python3 ../tech/py/matchports.py --mag ${LMAG}/${PRCELL}.mag --ref cdl/${PRCELL}.spice ${MPOPT}
+
+# Fix the FIXED_BBOX property of every cell in design/${LIB} to match its true
+# geometric bounding box (read from magic). The top tile cell (${PRCELL}) is
+# left untouched so its fixed tile size is preserved. Only LIB mags are written.
+# Dry-run by default; apply with:  make fixbbox BBOPT=--apply
+fixbbox:
+	python3 ../tech/script/fixbbox ${LMAG} ${PRCELL} ${BBOPT}
 
 lvs: xlvs
 
@@ -191,7 +241,10 @@ drc:
 	@tail -n 1 drc/${PRCELL}_drc.log| perl -ne "\$$exit = 0;use Term::ANSIColor;print(sprintf(\"%-40s\t[ \",${PRCELL}));if(m/:\s+0\n/ig){print(color('green').'DRC OK  '.color('reset'));}else{print(color('red').'DRC FAIL'.color('reset'));\$$exit = 1;};print(\" ]\n\");exit \$$exit;" || tail -n 10 drc/${PRCELL}_drc.log
 
 kdrc:
+	@test -d drc || mkdir drc
+	@-rm drc/${PRCELL}_drc.xml
 	klayout -b -r ${PDK_ROOT}/sky130A/libs.tech/klayout/drc/sky130A_mr.drc  -rd input=gds/${PRCELL}.gds -rd topcell=${PRCELL} -rd report=../drc/${PRCELL}_drc.xml -rd thr=8 -rd feol=true -rd beol=true -rd offgrid=true  >& drc/${PRCELL}_kdrc.log
+	@python3 ../tech/script/checkkdrc drc/${PRCELL}_drc.xml ${PRCELL} || true
 
 #--------------------------------------------------------------------------------------
 #- Antenna
@@ -287,3 +340,39 @@ writable:
 	chmod a+w ../design/${LIB}/*.mag
 	chmod a+w ../design/${LIB}/*.sch
 	chmod a+w ../design/${LIB}/*.sym
+
+
+DATE = $(shell date "+%Y-%m-%d_%H%M")
+
+TAPEOUT=../tapeout
+# Fast pre-flight validation. Runs first so a missing tapeout dir aborts the
+# delivery *before* the multi-minute lvs/drc/ant checks. deps2tapeout pins the
+# exact dependency SHAs and lists any uncommitted files as a warning (pass
+# DEPS_OPT=--fail-on-dirty to hard-fail on a dirty tree).
+preflight:
+	@test -d ${TAPEOUT} || { echo "ERROR: no ${TAPEOUT} dir. Add the tapeout submodule."; exit 1; }
+	@test -d ${TAPEOUT}/ip || mkdir -p ${TAPEOUT}/ip
+	python3 ../tech/py/deps2tapeout.py --ip-root .. --out ${TAPEOUT}/ip/config.yaml ${DEPS_OPT}
+
+deliver: preflight cdl gds lvs drc ant
+	-${MAKE} lpe LIB=${LIB} CELL=${CELL}
+	@test -d ${TAPEOUT}/gds || mkdir ${TAPEOUT}/gds
+	@test -d ${TAPEOUT}/lef || mkdir ${TAPEOUT}/lef
+	@test -d ${TAPEOUT}/spi || mkdir ${TAPEOUT}/spi
+	-cp ${TAPEOUT}/gds/${CELL}.gds ${TAPEOUT}/gds/${DATE}_${CELL}.gds
+	@test -d ${TAPEOUT}/reports || mkdir ${TAPEOUT}/reports
+	cp ant/${CELL}_ant.log ${TAPEOUT}/reports/ant.log
+	cp drc/${CELL}_drc.log ${TAPEOUT}/reports/drc.log
+	cp lvs/${CELL}_lvs.log ${TAPEOUT}/reports/lvs.log
+	-cp lpe/${CELL}_lpe.spi ${TAPEOUT}/spi
+	cp xsch/${CELL}.spice ${TAPEOUT}/spi
+	-cp lpe/${CELL}_lvs.log ${TAPEOUT}/reports/lpe_lvs.log
+	cat ../tech/magic/deliver.tcl|perl -pe 's#{LIB}#${LIB}#ig;s#{CELL}#${CELL}#ig;' > deliver.tcl
+	magic -noconsole -dnull deliver.tcl
+	cp gds/${CELL}.gds ${TAPEOUT}/gds/${CELL}.gds
+	@test -d ${TAPEOUT}/docs || mkdir ${TAPEOUT}/docs
+	python3 ../tech/py/readme2tapeout.py --readme ../README.md --out ${TAPEOUT}/docs/info.md
+	pandoc -s --embed-resources --metadata title="${CELL}" ${TAPEOUT}/docs/info.md -o ${TAPEOUT}/docs/info.html
+
+precheck:
+	bash ../tech/make/tt_precheck.sh ${CELL} ${TAPEOUT}

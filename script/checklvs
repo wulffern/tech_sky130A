@@ -3,12 +3,19 @@ use Term::ANSIColor;
 use strict;
 
 my $cell = shift;
-my $short = shift;
 
-$short =~ s/\s+//ig;
+#- Options: --short for one line output, --noprop to ignore property
+#- errors. The flat LVS flow resolves symmetric gates by their
+#- properties, which netgen flags as property errors even when every
+#- itemized property matches, so a flat flow passes --noprop and
+#- relies on the hierarchical per cell runs for property checking.
 my $doShort = 0;
-if($short eq "--short"){
-  $doShort = 1;
+my $doProp = 1;
+foreach my $opt (@ARGV ? () : ()){}
+while(my $arg = shift){
+  $arg =~ s/\s+//ig;
+  $doShort = 1 if($arg eq "--short");
+  $doProp  = 0 if($arg eq "--noprop");
 }
 
 
@@ -43,6 +50,10 @@ while(<>){
 my $message = "";
 if(!$match){
   $message .= " Warning: Circuits do not match\n";
+}
+
+if(!$doProp){
+  $propOk = 1;
 }
 
 if(!$propOk){

@@ -1,0 +1,59 @@
+#!/usr/bin/env python3
+#
+# Summarize a KLayout DRC report (the XML produced by `make kdrc`) in the
+# same one-line, colored style as the Magic `make drc` post-processing:
+#
+#   <CELL>                                   [ KDRC OK   ]
+# or
+#   <CELL>                                   [ KDRC FAIL ]
+#     psdm.1 .................... 16
+#     li.3 ......................  4
+#
+# Usage: checkkdrc <report.xml> <CELL>
+#
+# Exits 0 when the report has zero violations, 1 otherwise (so it can gate
+# `make kdrc` like `make drc` / `make lvs` do).
+
+import sys
+import xml.etree.ElementTree as ET
+from collections import Counter
+
+GREEN = "\033[32m"
+RED = "\033[31m"
+RESET = "\033[0m"
+
+
+def main():
+    if len(sys.argv) < 3:
+        print("Usage: checkkdrc <report.xml> <CELL>")
+        return 1
+
+    report, cell = sys.argv[1], sys.argv[2]
+
+    counts = Counter()
+    try:
+        root = ET.parse(report).getroot()
+    except (FileNotFoundError, ET.ParseError) as exc:
+        print(f"{cell:<40}\t[ {RED}KDRC ERR {RESET} ]  ({exc})")
+        return 1
+
+    for item in root.iter("item"):
+        cat = (item.findtext("category") or "").strip("'") or "?"
+        counts[cat] += 1
+
+    total = sum(counts.values())
+    tag = f"{GREEN}KDRC OK  {RESET}" if total == 0 else f"{RED}KDRC FAIL{RESET}"
+    print(f"{cell:<40}\t[ {tag} ]")
+
+    if total:
+        width = max(len(c) for c in counts)
+        for cat, n in counts.most_common():
+            dots = "." * (width + 4 - len(cat))
+            print(f"    {cat} {dots} {n:>4}")
+        print(f"    {'total':<{width}}      {total:>4}")
+
+    return 0 if total == 0 else 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())
