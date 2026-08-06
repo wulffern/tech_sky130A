@@ -11,4 +11,5 @@ macro Shift_XK_Right "move r 1"
 #macro Control_XK_s "select more area"
 macro Meta_XK_s "select more area"
 
+drc style drc(full)
 source ../tech/magic/cic.tcl
