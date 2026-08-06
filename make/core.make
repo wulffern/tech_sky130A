@@ -59,7 +59,7 @@ NCELL=${LMAG}/${PRCELL}
 MCELL=${NCELL}.mag
 
 #- Options
-OPT=
+OPT?=
 
 SUB=BULKN
 
@@ -186,15 +186,25 @@ lvs "$$layout ${PRCELL}" "$$source ${PRCELL}" ${PDKPATH}/libs.tech/netgen/sky130
 endef
 export LVS_NETGEN_TCL
 
+#- Which extraction recipe feeds netgen. lvs.tcl extracts hierarchically,
+#- lvsflat.tcl flattens at netlist level so tap-less leaf cells and
+#- cross-cell connectivity are judged by geometry. Set in the IP's
+#- work/Makefile, e.g. LVSTCL=lvsflat.tcl
+LVSTCL?=lvs.tcl
+
+#- Which netgen setup drives the comparison. Override to layer project
+#- specific tolerances on top of the PDK setup
+NETGENSETUP?=${PDKPATH}/libs.tech/netgen/sky130A_setup.tcl
+
 xlvs:
 	test -d lvs || mkdir lvs
-	cat ../tech/magic/lvs.tcl|perl -pe 's#{PATH}#${LMAG}#ig;s#{CELL}#${PRCELL}#ig;' > lvs/${PRCELL}_spi.tcl
+	cat ../tech/magic/${LVSTCL}|perl -pe 's#{PATH}#${LMAG}#ig;s#{CELL}#${PRCELL}#ig;' > lvs/${PRCELL}_spi.tcl
 	magic -noconsole -dnull lvs/${PRCELL}_spi.tcl > lvs/${PRCELL}_spi.log ${RDIR}
 ifdef VERILOG_FILE
 	echo "$$LVS_NETGEN_TCL" > lvs/${PRCELL}_netgen.tcl
 	netgen -batch source lvs/${PRCELL}_netgen.tcl
 else
-	netgen -batch lvs "lvs/${PRCELL}.spi ${PRCELL}"  "cdl/${PRCELL}.spice ${PRCELL}" ${PDKPATH}/libs.tech/netgen/sky130A_setup.tcl lvs/${PRCELL}_lvs.log > lvs/${PRCELL}_netgen_lvs.log
+	netgen -batch lvs "lvs/${PRCELL}.spi ${PRCELL}"  "cdl/${PRCELL}.spice ${PRCELL}" ${NETGENSETUP} lvs/${PRCELL}_lvs.log > lvs/${PRCELL}_netgen_lvs.log
 endif
 	cat lvs/${PRCELL}_lvs.log | ../tech/script/checklvs ${PRCELL} ${OPT}
 
