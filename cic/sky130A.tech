@@ -24,6 +24,7 @@
         "POXR"  : { "alias" : "xpolyres","number" : 66,  "datatype" : 13,  "material" : "poly",      "previous" : "",  "next" : "CO", "pin" : "PO_pin" , "color" : "red"},
         "CPOXR"  : { "alias" : "xpolycontact","number" : 66,  "datatype" : 44,  "material" : "poly",      "previous" : "",  "next" : "CO", "pin" : "PO_pin" , "color" : "red"},
         "POR"  : { "alias" : "ppolyres","number" : 66,  "datatype" : 13,  "material" : "poly",      "previous" : "",  "next" : "CO", "pin" : "PO_pin" , "color" : "red"},
+        "DMYPOR" : { "alias" : "ppolyres","number" : 66,  "datatype" : 13,  "material" : "poly",      "previous" : "",  "next" : "CO", "pin" : "PO_pin" , "color" : "red"},
         "CPOR"  : { "alias" : "polycontact","number" : 66,  "datatype" : 44,  "material" : "poly",      "previous" : "",  "next" : "CO", "pin" : "PO_pin" , "color" : "red"},
 
         "PO_pin" : { "alias" : "","number" : 66, "datatype" : 16 },
