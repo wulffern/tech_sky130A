@@ -134,7 +134,9 @@
                         ]
     },
     "rules" : {
-        "ROUTE": { "horizontalgrid": 30, "verticalgrid" : 40 },
+        "ROUTE": { "horizontalgrid": 30, "verticalgrid" : 40,
+                   "pinlayer" : "M1",
+                   "directions" : { "M2" : "v", "M3" : "h", "M4" : "v", "M5" : "h" } },
         "CELL" : { "space" : 20, "digitalspace" : 18 },
 
         "PPT"   : { "enclosure" : 0},
