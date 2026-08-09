@@ -136,6 +136,8 @@
     "rules" : {
         "ROUTE": { "horizontalgrid": 30, "verticalgrid" : 40,
                    "pinlayer" : "M1",
+                   "pintravel" : "v",
+                   "costs" : { "M1" : 1, "M2" : 2, "M3" : 2, "M4" : 2, "M5" : 4 },
                    "directions" : { "M2" : "v", "M3" : "h", "M4" : "v", "M5" : "h" } },
         "CELL" : { "space" : 20, "digitalspace" : 18 },
 
