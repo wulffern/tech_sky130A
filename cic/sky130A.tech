@@ -156,7 +156,7 @@
         "VIA1" : { "space" : 20, "width" : 26 , "height" : 26},
         "VIA2" : { "space" : 20, "width" : 28 , "height" : 28},
         "VIA3" : { "space" : 20, "width" : 28 , "height" : 28},
-        "VIA4" : { "space" : 20, "width" : 28 , "height" : 28},
+        "VIA4" : { "space" : 20, "width" : 32 , "height" : 32},
         "VIA5" : { "space" : 20, "width" : 28 , "height" : 28},
 
         "PDIFF" :{ "PTAPCencOpposite" : 8, "enclosure" : 8,"PTAPCenclosure" : 8},
@@ -178,7 +178,7 @@
         "M2"   : { "minlength" : 30, "space" : 30, "width" : 30, "minwidth":30,  "VIA1encOpposite" : 6, "VIA1enclosure" : 3, "VIA2encOpposite" : 6, "VIA2enclosure" : 3, "capspace" : 32},
         "M3"   : { "minlength" : 30, "space" : 30, "width" : 30, "minwidth":30 , "VIA2enclosure" : 3, "VIA2encOpposite" : 6, "VIA3enclosure" : 3,"VIA3encOpposite" : 6, "capspace" : 32},
         "M4"   : { "minlength" : 80, "space" : 30, "width" : 30, "minwidth":30 , "cap_width" : 40, "VIA3enclosure" : 3, "VIA3encOpposite" : 6,"VIA4enclosure" : 3, "VIA4encOpposite" : 6, "capspace" : 32},
-        "M5"   : { "minlength" : 80, "space" : 30, "width" : 30, "minwidth":30 , "cap_width" : 40, "VIA4enclosure" : 3, "VIA4encOpposite" : 6,"VIA5enclosure" : 3, "VIA5encOpposite" : 6, "capspace" : 32},
+        "M5"   : { "minlength" : 80, "space" : 30, "width" : 30, "minwidth":30 , "cap_width" : 40, "VIA4enclosure" : 10, "VIA4encOpposite" : 10,"VIA5enclosure" : 10, "VIA5encOpposite" : 10, "capspace" : 32},
 
 
         "OP"   : { "POenclosure" : 0, "POencOpposite" : 80},
