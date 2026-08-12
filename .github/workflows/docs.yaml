@@ -40,8 +40,14 @@ jobs:
       - name: Generate site sources
         run: python3 py/mkdocsite.py
 
+      #- Pull requests only prove the site still compiles, so they never touch
+      #- Pages. enablement creates the Pages site on the first main run,
+      #- instead of failing until someone flips it in the settings.
       - name: Setup Pages
+        if: github.event_name != 'pull_request'
         uses: actions/configure-pages@v5
+        with:
+          enablement: true
 
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
@@ -57,6 +63,7 @@ jobs:
         run: bundle exec jekyll build -d ../_site
 
       - name: Upload artifact
+        if: github.event_name != 'pull_request'
         uses: actions/upload-pages-artifact@v3
         with:
           path: _site
