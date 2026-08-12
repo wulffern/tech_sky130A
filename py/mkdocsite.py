@@ -1,17 +1,23 @@
 #!/usr/bin/env python3
-"""Build the just-the-docs site under ``docs/`` from the markdown that sits
-next to every file in this repository.
+"""Build the just-the-docs site under ``docs/`` from the markdown in this
+repository.
 
-The documentation source is the repository itself:
+The site has two halves. The guides in ``guide/`` say how to use the
+repository, and are ordinary numbered markdown files:
+
+    guide/01-getting-started.md
+
+The reference is the repository itself, documented in place:
 
     magic/drc.tcl          the file
     magic/drc.tcl.md       what it is, who runs it, what it writes
     magic/README.md        what the whole folder is for
 
-This script turns that into a Jekyll site: one chapter per folder, one page per
-file, with the sidebar, search and prev/next navigation of ``just-the-docs``.
-Keeping the prose beside the code means a folder is readable on GitHub without
-building anything, and the site never drifts into a second copy of the truth.
+This script turns both into a Jekyll site: the guides first, then one chapter
+per folder and one page per file, with the sidebar, search and prev/next
+navigation of ``just-the-docs``. Keeping the reference prose beside the code
+means a folder is readable on GitHub without building anything, and the site
+never drifts into a second copy of the truth.
 
     python3 py/mkdocsite.py            # write docs/
     python3 py/mkdocsite.py --check    # only report undocumented files
@@ -39,8 +45,12 @@ GITHUB_BLOB = "https://github.com/wulffern/tech_sky130A/blob/main"
 #- deleted on every run, so a renamed source file cannot leave a stale page.
 DOCS_KEEP = {".gitignore", "_config.yml", "Gemfile", "Gemfile.lock", "README.md"}
 
+#- Hand written guides, numbered to fix their order. Not sidecars: these
+#- describe the flow rather than a single file.
+GUIDES = "guide"
+
 #- Directories that hold no documented sources.
-SKIP_DIRS = {".git", ".github", "docs"}
+SKIP_DIRS = {".git", ".github", "docs", GUIDES}
 
 #- Files that are not documented with a sidecar (they are the documentation,
 #- or they are git/infrastructure).
@@ -109,30 +119,53 @@ def collect():
 LINK_RE = re.compile(r"\]\((?!https?://|/|#)([^)\s]+\.md)(#[^)\s]*)?\)")
 
 
-def rewrite_links(text):
+def site_path(md_path):
+    """Where a repo markdown file ends up on the site, relative to its root."""
+    d, base = os.path.split(md_path)
+    if base == "README.md":
+        return (d + "/") if d else "./"
+    if d == GUIDES:
+        return guide_slug(base) + ".html"
+    return os.path.join(d, base.lstrip(".")[:-3] + ".html")
+
+
+def relative_href(href, out_dir):
+    """Rebase a site-root-relative href against the page that links to it."""
+    start = out_dir or "."
+    if href == "./":
+        return os.path.relpath("index.html", start)
+    rel = os.path.relpath(href.rstrip("/"), start)
+    return rel + "/" if href.endswith("/") else rel
+
+
+def rewrite_links(text, src_dir, out_dir):
     """Point ``.md`` cross links at the generated pages.
 
-    The sources link each other the way GitHub wants, ``[drc.tcl](drc.tcl.md)``,
-    so a folder reads correctly without building the site. Jekyll serves those
-    same pages as ``.html``, folder overviews as the folder itself, and drops
-    the leading dot that ``page_name`` strips.
+    The sources link each other the way GitHub wants,
+    ``[drc.tcl](drc.tcl.md)``, so a folder reads correctly without building
+    the site. Here that is resolved against the source's own directory and
+    then re-expressed relative to the generated page, which is not the same
+    place: a guide lives in ``guide/`` but is published at the site root.
     """
     def sub(m):
         target, anchor = m.group(1), m.group(2) or ""
-        d, base = os.path.split(target)
-        if base == "README.md":
-            href = (d + "/") if d else "./"
-        else:
-            href = os.path.join(d, base.lstrip(".")[:-3] + ".html")
-        return f"]({href}{anchor})"
+        resolved = os.path.normpath(os.path.join(src_dir, target))
+        return f"]({relative_href(site_path(resolved), out_dir)}{anchor})"
 
     return LINK_RE.sub(sub, text)
 
 
-def read_body(path):
-    """Read a documentation source, stripping a trailing newline run."""
+def read_body(path, out_dir=None):
+    """Read a documentation source, stripping a trailing newline run.
+
+    ``out_dir`` is the directory of the generated page inside ``docs/``, and
+    defaults to the source's own directory.
+    """
+    src_dir = os.path.dirname(path)
+    if out_dir is None:
+        out_dir = src_dir
     with open(os.path.join(ROOT, path), encoding="utf-8") as fi:
-        return rewrite_links(fi.read().rstrip("\n"))
+        return rewrite_links(fi.read().rstrip("\n"), src_dir, out_dir)
 
 
 def front_matter(**fields):
@@ -157,6 +190,30 @@ def page_name(basename):
     ``magicrc.md``. The page title keeps the real name.
     """
     return basename.lstrip(".") + ".md"
+
+
+#- guide/01-getting-started.md -> getting-started
+GUIDE_RE = re.compile(r"^(\d+)[-_](.+)\.md$")
+
+
+def guide_slug(basename):
+    m = GUIDE_RE.match(basename)
+    return m.group(2) if m else basename[:-3]
+
+
+def guide_files():
+    """The guides, in the order their number prefix asks for."""
+    d = os.path.join(ROOT, GUIDES)
+    if not os.path.isdir(d):
+        return []
+    return sorted(f for f in os.listdir(d) if GUIDE_RE.match(f))
+
+
+def first_heading(body, fallback):
+    for line in body.splitlines():
+        if line.startswith("# "):
+            return line[2:].strip()
+    return fallback
 
 
 def with_source_link(path, body):
@@ -224,10 +281,22 @@ def build(sources, docs):
           front_matter(layout="default", title="tech_sky130A", nav_order=0)
           + "\n" + read_body("README.md") + "\n")
 
+    #- Guides first, in their numbered order, published at the site root.
+    guides = guide_files()
+    for i, base in enumerate(guides):
+        body = read_body(f"{GUIDES}/{base}", out_dir="")
+        write(guide_slug(base) + ".md",
+              front_matter(layout="default",
+                           title=first_heading(body, guide_slug(base)),
+                           nav_order=i + 1)
+              + "\n" + body + "\n")
+
     dirs = sorted(sources)
     toplevel = [d for d in dirs if "/" not in d]
 
-    order = {d: (i + 1) * 10 for i, d in enumerate(toplevel)}
+    #- Then the reference, after every guide.
+    base_order = len(guides) + 1
+    order = {d: (base_order + i) * 10 for i, d in enumerate(toplevel)}
 
     for d in dirs:
         parts = d.split("/")
@@ -257,8 +326,9 @@ def build(sources, docs):
                                grand_parent=parent, nav_order=100 + i)
                   + "\n" + with_source_link(path, body) + "\n")
 
-    pages = sum(len(v) for v in sources.values()) + len(dirs) + 1
-    print(f"INFO: wrote {pages} pages to docs/")
+    pages = sum(len(v) for v in sources.values()) + len(dirs) + len(guides) + 1
+    print(f"INFO: wrote {pages} pages to docs/ "
+          f"({len(guides)} guides, {len(dirs)} folders)")
 
 
 def main():

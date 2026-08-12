@@ -17,6 +17,21 @@ my_ip/
 
 [cicconf](cicconf/README.md) is what creates that structure.
 
+## Guides
+
+Start here if you have not used this before.
+
+| Guide | |
+|:-|:-|
+| [Getting started](guide/01-getting-started.md) | Tools, environment, and making your first IP |
+| [The design flow](guide/02-design-flow.md) | Schematic → netlist → layout → checks → extraction |
+| [Simulation](guide/03-simulation.md) | Corner names, testbenches, specs and summaries |
+| [Verification](guide/04-verification.md) | DRC, LVS (and when to go flat), antenna, repairs |
+| [Tapeout](guide/05-tapeout.md) | Pinning dependencies, delivering, precheck |
+| [When something breaks](guide/06-troubleshooting.md) | The failures you will actually hit |
+
+## Reference
+
 | Folder | Description |
 |:-|:-|
 | [bash](bash/README.md) | `PDK_ROOT` and `PDK`, which every tool here assumes |
@@ -32,9 +47,10 @@ my_ip/
 
 ## Documentation
 
-Every file in this repository has a markdown file beside it saying what it is
-and who runs it, and every folder has a `README.md`. Those are published as a
-site at <https://wulffern.github.io/tech_sky130A>, built by
+The guides above live in [guide/](guide/01-getting-started.md). The reference
+is the repository itself: every file has a markdown file beside it saying what
+it is and who runs it, and every folder has a `README.md`. Both halves are
+published as a site at <https://wulffern.github.io/tech_sky130A>, built by
 [py/mkdocsite.py](py/mkdocsite.py.md) and the DOCS workflow.
 
 ```bash
