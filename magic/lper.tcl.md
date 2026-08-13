@@ -21,8 +21,10 @@ ext2spice cthresh 0.01
 
 Resistance extraction in magic is a two step affair: `extresist` needs the
 `.sim` file that `ext2sim` writes, and only then can `ext2spice extresist on`
-merge the resistor network into the spice netlist. `tolerance 10` is the
-percentage below which a resistance is not worth splitting a node for.
+merge the resistor network into the spice netlist. `tolerance 10` controls how
+aggressively `extresist` simplifies that network; raising it gives fewer nodes
+and a faster simulation. Magic's documentation is the place to check what the
+value is measured in.
 
 `cellname delete {CELL}` drops the unflattened original so the flattened copy
 is unambiguously the top cell.

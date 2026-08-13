@@ -54,13 +54,26 @@ needed by some of the [scripts](../script/README.md), and `gdstk` by
 
 ## 3. Make an IP
 
-Pick a template from [cicconf/](../cicconf/README.md) and run it in the
-directory that will hold your repositories:
+From the directory that holds your repositories, with a `config.yaml` naming
+the project, the technology and the template to use:
+
+```yaml
+options:
+  project: JNW
+  technology: SKY130A
+  template:
+    ip: ../tech_sky130A/cicconf/jnw.yaml
+```
 
 ```bash
-mkdir ~/work && cd ~/work
-cicconf template ../tech/cicconf/jnw.yaml
+cd ~/work
+cicconf newip bias
 ```
+
+The IP is named `<project>_<name>_<technology>`, so that gives
+`JNW_BIAS_SKY130A` in a directory called `jnw_bias_sky130a`. Add
+`--ip <path>` to use a template other than the one in `config.yaml`, and see
+[cicconf/](../cicconf/README.md) for what the four here differ in.
 
 That creates the repository, writes the CI workflows, makes the first commit,
 and lays down the symlinks the flow depends on:
@@ -71,12 +84,12 @@ and lays down the symlinks the flow depends on:
 ├── cpdk/                   borders and shared symbols
 ├── jnw_tr_sky130A/         standard cells
 ├── jnw_atr_sky130A/        analog transistor library
-└── my_ip/
+└── jnw_bias_sky130a/
     ├── tech -> ../tech_sky130A
     ├── config.yaml         what to clone
     ├── info.yaml           who you are, what the docs say
-    ├── design/MY_IP_SKY130A/
-    │   ├── MY_CELL.sch
+    ├── design/JNW_BIAS_SKY130A/
+    │   ├── JNW_BIAS.sch          ${CELL}, the IP name less its last segment
     │   └── JNW_TR_SKY130A -> ../../../jnw_tr_sky130A/design/JNW_TR_SKY130A
     ├── work/               where you run make
     ├── sim/                where you run cicsim
@@ -86,7 +99,7 @@ and lays down the symlinks the flow depends on:
 On an IP that already exists, clone its dependencies instead:
 
 ```bash
-cd my_ip
+cd jnw_bias_sky130a
 cicconf --rundir ../ --config config.yaml clone --https
 ```
 

@@ -21,14 +21,27 @@ simulations:
         method: 3std
 ```
 
-One entry per column of the table. `src` is the result directory a corner run
-wrote, and `method` says how to reduce the runs in it to a single number:
+The key under `simulations` is the testbench name, and it is load bearing:
+cicsim reads the specification from `<key>.yaml`, so `tran:` here is what
+makes [tran.yaml](tran.yaml.md) the spec file. Rename the testbench and this
+key has to follow, or the table comes out empty.
 
-| Method | Reduction |
-|:-|:-|
-| `typical` | The single typical run |
-| `minmax` | Worst case over every run in the set |
-| `3std` | Mean ± 3 standard deviations, for the Monte Carlo set |
+Under `data`, one entry per column of the table. `src` is the result directory
+a corner run wrote, and `method` says how to reduce the runs in it:
+
+| Method | Typical column | Min / max columns |
+|:-|:-|:-|
+| contains `typ` | median | none |
+| contains `3std` | mean | mean ± 3σ |
+| contains `std` | mean | mean ± 1σ |
+| anything else | median | the actual min and max of the set |
+
+The match is a substring test in the order above, so `typical` selects the
+first row and `minmax` falls through to the last. Two consequences worth
+knowing: `typical` reports the **median** of whatever runs are in that
+directory, not "the one typical run" — it only looks like a single value
+because the set usually holds one — and `minmax` reports a real minimum and
+maximum, so it is the honest worst case rather than a σ estimate.
 
 The three defaults line up with the `typical`, `etc` and `mc` targets of the
 [Makefile](Makefile.md), which is why plain `make` runs exactly those before
