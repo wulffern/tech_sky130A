@@ -68,8 +68,9 @@ The internal coordinate system is **ångström**. In cicpy, `Cell.toMicron` is
 nanometres and not in internal units.
 
 A worked example from the history of this file: `VIA4` (magic's via3) was
-changed from `28` to `32` in a commit titled "legal VIA4 size", which is
-0.28 µm → 0.32 µm, sky130's exact via3 size.
+changed from `28` to `32` in a commit titled "legal VIA4 (magic via3) size",
+which on this scale is 0.28 µm → 0.32 µm. Whatever the PDK requires, it is a
+sub-micron via dimension, which is the corroboration that matters here.
 
 Magic output is a third scale again. `MagicPrinter.toMicron` is
 `round(angstrom/50)`, snapping to the 50 Å = 5 nm sky130 grid; that 50 is

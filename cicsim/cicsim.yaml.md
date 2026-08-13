@@ -13,8 +13,12 @@ cd sim && ln -s ../tech/cicsim/cicsim.yaml
 
 ## variable
 
-`CPDK_NGPICE: ../../../`, the path a testbench uses to reach the cpdk spice
-models from inside `sim/<CELL>/`.
+`CPDK_NGPICE: ../../../`.
+
+Note that cicsim 0.2.7 does not read this key. The only top-level keys it
+looks at are `ngspice`, `spectre`, `cadence`, `corner` and `options`, so
+whatever consumes `variable` is either older, newer, or somewhere else
+entirely. Do not assume changing it does anything.
 
 ## corner
 

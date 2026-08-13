@@ -15,8 +15,11 @@ ext2spice cthresh 0.01
 ext2spice -p lpe/ext -o lpe/{CELL}_lpe.spi
 ```
 
-`cthresh 0.01` keeps every capacitor down to 0.01 fF. Lower it to catch more,
-raise it for a netlist that simulates in reasonable time.
+`cthresh 0.01` is magic's capacitance threshold: capacitors below it are
+dropped. Lower it to catch more, raise it for a netlist that simulates in
+reasonable time. Check magic's own documentation for the units before reading
+much into the number; what is certain here is that this flow keeps far more
+capacitance than [lpeh.tcl](lpeh.tcl.md), which uses `0.1`.
 
 Resistance is *not* extracted; use [lper.tcl](lper.tcl.md) for that.
 

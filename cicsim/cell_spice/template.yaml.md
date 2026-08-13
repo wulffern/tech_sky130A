@@ -28,9 +28,20 @@ so the view can be named on the command line and end up in the result
 directory name. [tran.spi](tran.spi.md) then switches on `Lay` with `#ifdef` to
 include the extracted netlist instead of the schematic one.
 
-`sha: True` records the netlist hash with the results, so a stale result is
-recognisable. `useTmpDir: False` keeps the run in place, which makes debugging
-a failed simulation much easier.
+`sha: True` is a caching switch, not a bookkeeping one. cicsim hashes every
+input file it references, saves them as `<run>.sha`, and on the next run
+compares. If nothing has changed it prints "No spice files have changed" and
+**skips the simulation entirely**; the `.meas` file is hashed separately, so
+an unchanged measurement file on top of a skipped simulation skips the
+measurement run too. That is what makes a repeated `make typical` cheap, and
+also why a run that "did nothing" is usually correct rather than broken. Pass
+`--no-sha` to force it.
+
+`useTmpDir: False` keeps the run directory where it is. With it on, cicsim
+puts the run under `/tmp/cicsim/$USER/<lib>/<cell>/<rundir>`, symlinks it into
+place, and rewrites `../` in every `.include` and `.lib` to an absolute path
+so the relocated netlist still resolves. Off is the easier thing to debug,
+since the files are simply there.
 
 ## copy
 

@@ -145,10 +145,16 @@ Then:
 make summary    # writes README.md with the table
 ```
 
-`summary.yaml` decides the columns: the typical run, worst case over the `etc`
-set, and mean ± 3σ over the Monte Carlo set. Add a `Lay_typ` entry pointing at
-`results/tran_Lay_typical` to get the post-layout column beside the schematic
-one.
+`summary.yaml` decides the columns, and its `method` decides how each result
+directory is reduced: the median over the `typical` set, the real min and max
+over the `etc` set, and mean ± 3σ over the Monte Carlo set. Add a `Lay_typ`
+entry pointing at `results/tran_Lay_typical` to get the post-layout column
+beside the schematic one. See
+[summary.yaml](../cicsim/cell_spice/summary.yaml.md) for the exact reductions.
+
+Only measurements that some entry in `tran.yaml` names in its `src` reach the
+table at all, so a measurement you added and cannot find is usually one you
+never gave a spec.
 
 The README that comes out is what the documentation action publishes, so a
 simulation that is worth keeping should end with `make summary`.

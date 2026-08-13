@@ -2,8 +2,11 @@
 
 The generic IP template, and the one to copy when starting a new flow.
 
+Point `options.template.ip` at it in your monorepo `config.yaml`, or select it
+for one IP on the command line:
+
 ```bash
-cicconf template ../tech/cicconf/ip_template.yaml
+cicconf newip <name> --ip ../tech_sky130A/cicconf/ip_template.yaml
 ```
 
 ## dirs
