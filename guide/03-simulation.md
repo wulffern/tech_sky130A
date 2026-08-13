@@ -11,13 +11,44 @@ A run picks one value from each of four groups. The names are terse, so:
 | Group | Names | Means |
 |:-|:-|:-|
 | General | `Gt` | Nothing; a placeholder so the position is always filled |
-| Process | `Ktt` `Kss` `Kff` `Ksf` `Kfs` `Khh` `Khl` `Klh` `Kll` | Two letters: device corner, then RC corner |
+| Process | `Ktt` `Kss` `Kff` `Ksf` `Kfs` `Khh` `Khl` `Klh` `Kll` | One PDK corner name, see below |
 | Temperature | `Tt` 27 °C, `Tl` −40 °C, `Th` 125 °C, `Tm` 42.4 °C | [ngspice/temperature.spi](../ngspice/temperature.spi.md) |
 | Supply | `Vt` 1.8 V, `Vl` 1.7 V, `Vh` 1.9 V | [ngspice/supply.spi](../ngspice/supply.spi.md) |
 
-So `Kss` is slow devices with typical parasitics, `Ksf` is slow n and fast p,
-`Khl` is high resistance with low capacitance. Add `mm` for mismatch
-(`Kttmm`), and `Kmc` turns on process variation.
+The two letters after `K` are one sky130 corner name, not two independent
+choices, and they come in two families:
+
+| Corner | FET models | Resistance | Capacitance |
+|:-|:-|:-|:-|
+| `Ktt` | tt | typical | typical |
+| `Kss` | ss | **high** | **high** |
+| `Kff` | ff | **low** | **low** |
+| `Ksf` | sf | typical | typical |
+| `Kfs` | fs | typical | typical |
+| `Khh` | **tt** | high | high |
+| `Khl` | **tt** | high | low |
+| `Klh` | **tt** | low | high |
+| `Kll` | **tt** | low | low |
+
+So in `Kss`/`Kff`/`Ksf`/`Kfs` the letters name the *device* corner, nfet then
+pfet, and the parasitics come along for the ride: slow devices are shipped
+with high R and high C, fast devices with low R and low C, and the skewed
+corners keep typical RC. In `Khh`/`Khl`/`Klh`/`Kll` the devices are typical
+and the letters name the *parasitic* corner instead, resistance then
+capacitance.
+
+`Kss` is therefore not "slow devices, typical parasitics" — it is slow
+devices with the pessimistic RC as well. If you want a device corner against
+a different RC set, there is no name for it; run the RC corner separately.
+
+Add `mm` for mismatch (`Kttmm`, `Kssmm`, ...), which sets `mc_mm_switch=1` on
+top of the same includes. `Kmc` is different again: it includes only the
+Monte Carlo parameter files with `mc_pr_switch=1`, for process variation.
+
+The `A...` names are the same corners written the short way: `Att` is a
+one-line `.lib` into the PDK's own `sky130.lib.spice`, where `K...` spells
+out every include that section would pull in. `Amctt` is the PDK's `tt_mm`
+section. Use whichever you prefer; they resolve to the same models.
 
 Two more, from the local `cicsim.yaml` the testbench template writes: `Sch`
 and `Lay`. Both are empty corners. They add nothing to the netlist and exist so
