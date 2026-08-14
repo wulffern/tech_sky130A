@@ -323,6 +323,23 @@ drcall:
 kdrcall:
 	@${foreach  b, ${CELLS}, ${MAKE} -s gds kdrc CELL=$b;}
 
+#- Rebuild the whole hierarchy, leaf first.
+#-
+#- `make mag` builds a cell and the subcells its own sidecar declares,
+#- but not a cell it INSTANTIATES that has a sidecar of its own -- that
+#- one has to be current first. MAGCELLS is that order, leaf to top, and
+#- an IP with a flat hierarchy can leave it alone: it defaults to CELLS.
+MAGCELLS ?= ${CELLS}
+
+rebuild:
+	@${foreach  b, ${MAGCELLS}, ${MAKE} -s mag CELL=$b;}
+
+#- The whole thing: rebuild every cell, then check every cell. This is
+#- what answers "is the design still good" after a library or tool
+#- change, and it is the only way to catch drift that only shows up when
+#- something below you moves.
+rebuildall: rebuild checkall
+
 #- What "checked" means for one cell. Both decks, connectivity, antenna.
 check: cdl drc kdrc lvs ant
 
