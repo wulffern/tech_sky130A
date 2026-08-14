@@ -137,8 +137,8 @@
         "ROUTE": { "horizontalgrid": 30, "verticalgrid" : 40,
                    "pinlayer" : "M1",
                    "pintravel" : "v",
-                   "costs" : { "M1" : 1, "M2" : 2, "M3" : 2, "M4" : 2, "M5" : 4 },
-                   "directions" : { "M2" : "v", "M3" : "h", "M4" : "v", "M5" : "h" } },
+                   "costs" : { "M1" : 2, "M2" : 1, "M3" : 3, "M4" : 5, "M5" : 1000 },
+                   "directions" : { "M1" : "v", "M2" : "v", "M3" : "h", "M4" : "v", "M5" : "h" } },
         "CELL" : { "space" : 20, "digitalspace" : 18 },
 
         "PPT"   : { "enclosure" : 0},
