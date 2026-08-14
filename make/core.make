@@ -341,7 +341,13 @@ rebuild:
 rebuildall: rebuild checkall
 
 #- What "checked" means for one cell. Both decks, connectivity, antenna.
-check: cdl drc kdrc lvs ant
+#-
+#- gds comes before kdrc because kdrc READS gds/${PRCELL}.gds and has no
+#- dependency on it: without this, `check` runs klayout over whatever
+#- gds was last written and reports a verdict on the previous layout.
+#- Measured: after moving LELO_TEMP onto a local bipolar, `check` still
+#- read a gds from the day before and called the cell KDRC FAIL.
+check: cdl drc gds kdrc lvs ant
 
 #- ... and for every cell the IP lists.
 checkall:
