@@ -136,9 +136,15 @@
     "rules" : {
         "ROUTE": { "horizontalgrid": 30, "verticalgrid" : 40,
                    "pinlayer" : "M1",
-                   "pintravel" : "v",
-                   "costs" : { "M1" : 1, "M2" : 2, "M3" : 2, "M4" : 2, "M5" : 4 },
-                   "directions" : { "M2" : "v", "M3" : "h", "M4" : "v", "M5" : "h" } },
+                   "pintravel" : "h",
+                   "costs" : { "M1" : 2, "M2" : 1, "M3" : 4, "M4" : 8, "M5" : 1000 },
+                   "directions" : { "M1" : "h", "M2" : "v", "M3" : "h", "M4" : "v", "M5" : "h" } },
+        "NETS": [
+            { "match": "^(VDD|VSS|AVDD|AVSS)", "class": "supply", "widthmult": 3 },
+            { "match": "^IB(P|N)", "class": "sensitive", "keepaway": 2 },
+            { "match": "_1V8$", "class": "digital" }
+        ],
+
         "CELL" : { "space" : 20, "digitalspace" : 18 },
 
         "PPT"   : { "enclosure" : 0},
