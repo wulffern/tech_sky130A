@@ -59,6 +59,8 @@ while(<$fo>){
 }
 close($fo) or die "Could not close $lpe";
 
+$outbuff = canonicalizeParasitics($outbuff);
+
 open($fo,">","$lpe") or die "Could not open $lpe";
 print $fo $outbuff;
 close($fo) or die "Could not close $lpe";
@@ -67,3 +69,86 @@ close($fo) or die "Could not close $lpe";
 print "Replacing port list: ". $cktbuff;
 print "               with: ". $buffer;
 exit 0;
+
+#- Sort and renumber the extracted parasitics so the netlist is byte
+#- reproducible.
+#-
+#- magic does not emit the parasitic list in a stable order. Extracting
+#- an unchanged layout twice yields the SAME parasitics -- same nodes,
+#- same values, same count -- in a different sequence and under
+#- different C<n>/R<n> names. Measured on LELOTEMP_CMP: three
+#- extractions, 181 capacitors and 55 other lines every time, every
+#- non-parasitic line byte identical, only the ordering moving.
+#-
+#- That matters because the file hash is what the flow keys off.
+#- cicsim records a sha per dependency per corner and re-simulates when
+#- one stops matching, so a re-extraction marked every Lay run stale and
+#- invited hours of pointless resimulation of an unchanged circuit. It
+#- also makes lpe/*.spi useless to diff when a layout change really did
+#- alter the parasitics: the signal drowns in reordering.
+#-
+#- Reordering is safe. A spice netlist is a set of elements, and the
+#- element names are labels nothing reads -- the lvs step strips every
+#- ^C line before netgen sees it. No device, node or value is touched.
+sub canonicalizeParasitics {
+    my ($text) = @_;
+
+    my @lines = split(/^/, $text);
+    my @keep;
+    my @par;
+    my $at;
+
+    foreach my $line (@lines){
+        my $body = $line;
+        $body =~ s/\r?\n\z//;
+
+        #- A parasitic is "C<n> node node value", optionally followed by
+        #- a magic comment such as "$ **FLOATING". Device resistors also
+        #- come out as R<n> lines but carry a model name, so anything
+        #- mentioning the PDK prefix is left exactly where it is.
+        if($body =~ m/^([CR])(\d+)\s+(\S+)\s+(\S+)\s+(\S+)(.*)$/
+           && $body !~ m/sky130/){
+            my ($type,$n1,$n2,$val,$rest) = ($1,$3,$4,$5,$6);
+
+            #- Order the node pair for the sort key only. A parasitic is
+            #- symmetric, so the pair is what identifies it, but the line
+            #- is emitted with the nodes as magic wrote them: today magic
+            #- is consistent about which comes first, and rewriting them
+            #- would add a diff of its own if that ever changes.
+            my ($a,$b) = ($n1 le $n2) ? ($n1,$n2) : ($n2,$n1);
+
+            push(@par, {
+                type => $type,
+                key  => join("\x00", $type, $a, $b, $val, $rest),
+                n1   => $n1,
+                n2   => $n2,
+                val  => $val,
+                rest => $rest,
+            });
+
+            #- Remember where the block started so it goes back in place
+            #- rather than at the end of the subcircuit.
+            $at = scalar(@keep) unless defined $at;
+        }else{
+            push(@keep, $line);
+        }
+    }
+
+    return $text unless @par;
+
+    @par = sort { $a->{key} cmp $b->{key} } @par;
+
+    #- Renumber per type, so C and R each count from zero the way magic
+    #- would have written them.
+    my %seq;
+    my @block;
+    foreach my $p (@par){
+        my $n = $seq{$p->{type}}++;
+        push(@block, sprintf("%s%d %s %s %s%s\n",
+                             $p->{type}, $n,
+                             $p->{n1}, $p->{n2}, $p->{val}, $p->{rest}));
+    }
+
+    splice(@keep, $at, 0, @block);
+    return join("", @keep);
+}
