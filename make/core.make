@@ -314,6 +314,39 @@ lpeall:
 drcall:
 	@${foreach  b, ${CELLS}, ${MAKE} -s drc CELL=$b;}
 
+#- klayout's deck alongside magic's, because they do not agree. magic
+#- called JNWBIAS_BIPOLAR clean while klayout found 10 psdm.1 in it, and
+#- that rode into every design using the bandgap unnoticed. kdrc needs a
+#- gds, and it is the slower of the two, so it is its own target rather
+#- than folded into `drc` -- but it belongs in anything that claims a
+#- cell has been checked.
+kdrcall:
+	@${foreach  b, ${CELLS}, ${MAKE} -s gds kdrc CELL=$b;}
+
+#- Rebuild the whole hierarchy, leaf first.
+#-
+#- `make mag` builds a cell and the subcells its own sidecar declares,
+#- but not a cell it INSTANTIATES that has a sidecar of its own -- that
+#- one has to be current first. MAGCELLS is that order, leaf to top, and
+#- an IP with a flat hierarchy can leave it alone: it defaults to CELLS.
+MAGCELLS ?= ${CELLS}
+
+rebuild:
+	@${foreach  b, ${MAGCELLS}, ${MAKE} -s mag CELL=$b;}
+
+#- The whole thing: rebuild every cell, then check every cell. This is
+#- what answers "is the design still good" after a library or tool
+#- change, and it is the only way to catch drift that only shows up when
+#- something below you moves.
+rebuildall: rebuild checkall
+
+#- What "checked" means for one cell. Both decks, connectivity, antenna.
+check: cdl drc kdrc lvs ant
+
+#- ... and for every cell the IP lists.
+checkall:
+	@${foreach  b, ${CELLS}, ${MAKE} -s check CELL=$b;}
+
 clean:
 	-rm -rf lvs drc lpe cdl gds *.ext *.sim *.nodes
 
@@ -354,7 +387,7 @@ preflight:
 	@test -d ${TAPEOUT}/ip || mkdir -p ${TAPEOUT}/ip
 	python3 ../tech/py/deps2tapeout.py --ip-root .. --out ${TAPEOUT}/ip/config.yaml ${DEPS_OPT}
 
-deliver: preflight cdl gds lvs drc ant
+deliver: preflight cdl gds lvs drc kdrc ant
 	-${MAKE} lpe LIB=${LIB} CELL=${CELL}
 	@test -d ${TAPEOUT}/gds || mkdir ${TAPEOUT}/gds
 	@test -d ${TAPEOUT}/lef || mkdir ${TAPEOUT}/lef
