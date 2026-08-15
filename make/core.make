@@ -161,9 +161,26 @@ ver:
 
 
 
+#- ${CURDIR}, NOT ${PWD}. Make exports PWD as the directory it was
+#- INVOKED from, so under `make -C work cdl` -- which is how every
+#- check runs -- this wrote the netlist to <ip>/cdl/ while lvs reads
+#- work/cdl/. xschem then failed on the missing directory with exit 10,
+#- the `-` prefix swallowed it, and lvs compared whatever netlist was
+#- last left in work/cdl/. Measured in lelo_temp_sky130a:
+#- work/cdl/LELO_TEMP.spice was four days stale while `make check`
+#- reported a verdict on it every day.
+#-
+#- THE GUARD IS THE ARTEFACT, NOT THE EXIT CODE. xschem exits 10 on a
+#- SUCCESSFUL headless netlist (measured: exit 10, netlist written,
+#- every time), which is why the `-` is here and why it hid the bug
+#- above. So delete the netlist first, tolerate the exit code, then
+#- require the file. A run that writes nothing stops the build instead
+#- of leaving lvs to compare a stale one.
 cdl:
 	@test -d cdl || mkdir cdl
-	-xschem -q -x -b -s --tcl "set lvs_netlist 1; set netlist_dir ${PWD}/cdl/; set bus_replacement_char {[]};" -n ../design/${LIB}/${PRCELL}.sch
+	@rm -f cdl/${PRCELL}.spice
+	-xschem -q -x -b -s --tcl "set lvs_netlist 1; set netlist_dir ${CURDIR}/cdl/; set bus_replacement_char {[]};" -n ../design/${LIB}/${PRCELL}.sch
+	@test -s cdl/${PRCELL}.spice || { echo "cdl: xschem wrote no netlist for ${PRCELL}; lvs would have compared a stale one"; exit 1; }
 
 
 #--------------------------------------------------------------------------------------
