@@ -9,6 +9,28 @@ while(<>){
   #- Remove the bus notation
   s/,/ /ig;
 
+  #- DIODE AREA AND PERIM BACK INTO SI, for simulation only.
+  #-
+  #- These fields are COMPARED by LVS and EVALUATED by the simulator,
+  #- and the two want different numbers. The sky130A magic techfile
+  #- extracts a diode as `a=area*1E12 p=perim*1E6`, so an extracted
+  #- netlist carries picometres and netgen compares the two numbers as
+  #- written -- no SI value in the schematic can ever match one. So the
+  #- schematic holds magic's units and the SIMULATION netlist is the
+  #- side that gets patched, here, because LVS is the side that cannot
+  #- be: it compares against magic, which decides these units.
+  #-
+  #-   area  pm^2 -> m^2   x 1e-24      2.025e11 -> 2.025e-13
+  #-   perim pm   -> m     x 1e-12      1.8e6    -> 1.8e-6
+  #-
+  #- Only on a line naming a sky130 diode, so nothing else that has an
+  #- `area=` is touched. Left alone, a 0.45 x 0.45 um antenna diode
+  #- simulates as though it were 2e11 square metres.
+  if(m/sky130_fd_pr__diode_/i){
+    s/\barea\s*=\s*([0-9.eE+-]+)/"area=" . sprintf("%.6g", $1 * 1e-24)/ie;
+    s/\bperim\s*=\s*([0-9.eE+-]+)/"perim=" . sprintf("%.6g", $1 * 1e-12)/ie;
+  }
+
   if(m/\*\*.subckt/ig){
     s/\*\*//ig;
     $replacePlus = 1;
