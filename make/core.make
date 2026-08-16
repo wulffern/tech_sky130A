@@ -135,6 +135,9 @@ ip:
 	cd ${BUILD}; ${CICPY}  transpile ${LIB}.cic ../cic/sky130.tech ${LIB}  ${CICVIEWS} --smash "(P|N)CHIOA" --exclude ${CICEXCLUDE}
 	-test -f ../cic/post.py && python3 ../cic/post.py
 
+mag:
+	cicpy sch2mag ${LIB} ${CELL} ${OPT}
+
 view:
 	@cd ${BUILD}; ${CICGUI} ${LIB}.cic ../cic/sky130.tech
 
