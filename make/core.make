@@ -285,6 +285,19 @@ antf:
 #--------------------------------------------------------------------------------------
 #- Run parasitic extraction
 #--------------------------------------------------------------------------------------
+#- Same idea as LVS_NETGEN_TCL above: when the design has a digital block
+#- described only as an empty placeholder subckt in cdl (RTL, not schematic
+#- capture), reading in the gate-level verilog netlist fills in the real
+#- devices so the parasitic-extraction LVS check can match.
+define LPE_NETGEN_TCL
+set layout [readnet spice lpe/${PRCELL}_lpe_noc.spi]
+set source [readnet spice cdl/${PRCELL}.spice]
+readnet spice ${PDKPATH}/libs.ref/sky130_fd_sc_hd/spice/sky130_fd_sc_hd.spice $$source
+readnet verilog ${VERILOG_FILE} $$source
+lvs "$$layout ${PRCELL}" "$$source ${PRCELL}" ${PDKPATH}/libs.tech/netgen/sky130A_setup.tcl lpe/${PRCELL}_lvs.log > lpe/${PRCELL}_netgen_lvs.log
+endef
+export LPE_NETGEN_TCL
+
 lpe: xsch
 	test -d lpe || mkdir lpe
 	-rm lpe/${PRCELL}_lpe.spi
@@ -295,7 +308,12 @@ lpe: xsch
 #- Check LVS on the parasitic netlist to make sure it is a match
 	echo "Running LVS on the extracted netlist to confirm it's the same"
 	cat lpe/${PRCELL}_lpe.spi |egrep -v "^C" > lpe/${PRCELL}_lpe_noc.spi
+ifdef VERILOG_FILE
+	echo "$$LPE_NETGEN_TCL" > lpe/${PRCELL}_lpe_netgen.tcl
+	netgen -batch source lpe/${PRCELL}_lpe_netgen.tcl
+else
 	netgen -batch lvs "lpe/${PRCELL}_lpe_noc.spi ${PRCELL}"  "cdl/${PRCELL}.spice ${PRCELL}" ${PDKPATH}/libs.tech/netgen/sky130A_setup.tcl lpe/${PRCELL}_lvs.log > lpe/${PRCELL}_netgen_lvs.log
+endif
 	cat lpe/${PRCELL}_lvs.log | ../tech/script/checklvs ${PRCELL} --short
 
 lper: xsch
