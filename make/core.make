@@ -30,7 +30,7 @@ PRCELL = ${PREFIX}${CELL}
 
 PDKPATH=${PDK_ROOT}/sky130A
 
-.PHONY: drc lvs lpe gds cdl xsch ant lplot precheck preflight matchports fixbbox
+.PHONY: drc lvs lpe gds cdl xsch ant lplot precheck preflight matchports fixbbox xor diff
 
 
 #----------------------------------------------------------------------------
@@ -120,6 +120,10 @@ Commands:
    drc    Run Design Rule Checks
    doc    Use pandoc to convert README.md into README.html
    xview  Start Xschem
+   xor    Compare two GDS files with klayout, writing the differences to a GDS
+          make xor GDS1=a.gds GDS2=b.gds
+   diff   Same comparison as xor, but just report IDENTICAL/DIFFERENT
+          make diff GDS1=a.gds GDS2=b.gds
 endef
 
 export TECH_HELP
@@ -265,6 +269,28 @@ kdrc:
 	@-rm drc/${PRCELL}_drc.xml
 	klayout -b -r ${PDK_ROOT}/sky130A/libs.tech/klayout/drc/sky130A_mr.drc  -rd input=gds/${PRCELL}.gds -rd topcell=${PRCELL} -rd report=../drc/${PRCELL}_drc.xml -rd thr=8 -rd feol=true -rd beol=true -rd offgrid=true  >& drc/${PRCELL}_kdrc.log
 	@python3 ../tech/script/checkkdrc drc/${PRCELL}_drc.xml ${PRCELL} || true
+
+#--------------------------------------------------------------------------------------
+#- Compare two GDS files geometrically (klayout's strmxor)
+#--------------------------------------------------------------------------------------
+#- `diff` is the fast yes/no check: exit status only, nothing written, good for
+#- CI gating two GDS exports of what should be the same layout.
+#- `xor` is the same comparison but also writes the per-layer XOR result as a
+#- GDS so the differences can be loaded into klayout/magic and inspected.
+XOROPT?=
+XORNAME?=${PRCELL}
+
+xor:
+	@test -n "${GDS1}" -a -n "${GDS2}" || { echo "usage: make xor GDS1=<a.gds> GDS2=<b.gds>"; exit 1; }
+	@test -d xor || mkdir xor
+	strmxor ${XOROPT} ${GDS1} ${GDS2} xor/${XORNAME}_xor.gds
+	@echo "xor: differences (if any) written to xor/${XORNAME}_xor.gds"
+
+diff:
+	@test -n "${GDS1}" -a -n "${GDS2}" || { echo "usage: make diff GDS1=<a.gds> GDS2=<b.gds>"; exit 1; }
+	@strmxor --silent ${XOROPT} ${GDS1} ${GDS2} \
+		&& echo "${XORNAME}: GDS IDENTICAL" \
+		|| { echo "${XORNAME}: GDS DIFFERENT"; exit 1; }
 
 #--------------------------------------------------------------------------------------
 #- Antenna
