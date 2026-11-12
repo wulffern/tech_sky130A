@@ -12,7 +12,7 @@ and `CELL`; every target below is then run from `work/`.
 | `PREFIX` | empty | Prepended to `CELL` to give `PRCELL`, the name actually used |
 | `PDKPATH` | `${PDK_ROOT}/sky130A` | Where the netgen setup and KLayout deck are found |
 | `LVSTCL` | `lvs.tcl` | Extraction recipe, set to `lvsflat.tcl` for a flat comparison |
-| `NETGENSETUP` | the PDK setup | Override to layer project specific tolerances on top |
+| `NETGENSETUP` | the PDK setup | netgen setup for `lvs` and for the check in `lpe` and `lper`. Override to layer project specific tolerances on top |
 | `VERILOG_FILE` | unset | Gate level verilog to read into the LVS source netlist |
 | `CELLS` | unset | Cell list for the `...all` targets |
 | `OPT` | empty | Passed to `checklvs`, e.g. `--short` |
@@ -75,7 +75,9 @@ three depend on `xsch`, strip the `_flat` suffix magic leaves behind, repair the
 port list with [fixlpe](../script/fixlpe.md), and then LVS the extracted
 netlist against the CDL to prove the parasitics did not change the circuit. The
 capacitors (and for `lper` the resistors) are filtered out before that
-comparison.
+comparison. `lpe` and `lper` take the netgen setup from `NETGENSETUP`, as
+`lvs` does; `lpe: NETGENSETUP = <file>` in the IP's `work/Makefile` sets it
+for the extraction check alone.
 
 ## Repair helpers
 

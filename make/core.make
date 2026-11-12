@@ -216,8 +216,10 @@ export LVS_NETGEN_TCL
 #- work/Makefile, e.g. LVSTCL=lvsflat.tcl
 LVSTCL?=lvs.tcl
 
-#- Which netgen setup drives the comparison. Override to layer project
-#- specific tolerances on top of the PDK setup
+#- Which netgen setup drives the comparison, in `lvs` and in the check
+#- that ends `lpe` and `lper`. Override to layer project specific
+#- tolerances on top of the PDK setup. For one of them only, scope it in
+#- the IP's work/Makefile: `lpe: NETGENSETUP = my_lpe_setup.tcl`
 NETGENSETUP?=${PDKPATH}/libs.tech/netgen/sky130A_setup.tcl
 
 xlvs:
@@ -320,7 +322,7 @@ set layout [readnet spice lpe/${PRCELL}_lpe_noc.spi]
 set source [readnet spice cdl/${PRCELL}.spice]
 readnet spice ${PDKPATH}/libs.ref/sky130_fd_sc_hd/spice/sky130_fd_sc_hd.spice $$source
 readnet verilog ${VERILOG_FILE} $$source
-lvs "$$layout ${PRCELL}" "$$source ${PRCELL}" ${PDKPATH}/libs.tech/netgen/sky130A_setup.tcl lpe/${PRCELL}_lvs.log > lpe/${PRCELL}_netgen_lvs.log
+lvs "$$layout ${PRCELL}" "$$source ${PRCELL}" ${NETGENSETUP} lpe/${PRCELL}_lvs.log > lpe/${PRCELL}_netgen_lvs.log
 endef
 export LPE_NETGEN_TCL
 
@@ -338,7 +340,7 @@ ifdef VERILOG_FILE
 	echo "$$LPE_NETGEN_TCL" > lpe/${PRCELL}_lpe_netgen.tcl
 	netgen -batch source lpe/${PRCELL}_lpe_netgen.tcl
 else
-	netgen -batch lvs "lpe/${PRCELL}_lpe_noc.spi ${PRCELL}"  "cdl/${PRCELL}.spice ${PRCELL}" ${PDKPATH}/libs.tech/netgen/sky130A_setup.tcl lpe/${PRCELL}_lvs.log > lpe/${PRCELL}_netgen_lvs.log
+	netgen -batch lvs "lpe/${PRCELL}_lpe_noc.spi ${PRCELL}"  "cdl/${PRCELL}.spice ${PRCELL}" ${NETGENSETUP} lpe/${PRCELL}_lvs.log > lpe/${PRCELL}_netgen_lvs.log
 endif
 	cat lpe/${PRCELL}_lvs.log | ../tech/script/checklvs ${PRCELL} --short
 
@@ -352,7 +354,7 @@ lper: xsch
 #- Check LVS on the parasitic netlist to make sure it is a match
 	echo "Running LVS on the extracted netlist to confirm it's the same"
 	cat lpe/${PRCELL}_lper.spi |egrep -v "^C" |perl -ne '$$skip=0;if(m/^R/ig){unless(m/sky130/ig){$$skip = 1;}};unless($$skip){print $$_};'|perl -pe 's/\.(n|t)\d+\s/ /ig'> lpe/${PRCELL}_lper_norc.spi
-	netgen -batch lvs "lpe/${PRCELL}_lper_norc.spi ${PRCELL}"  "cdl/${PRCELL}.spice ${PRCELL}" ${PDKPATH}/libs.tech/netgen/sky130A_setup.tcl lpe/${PRCELL}_lvsr.log > lpe/${PRCELL}_netgen_lvsr.log
+	netgen -batch lvs "lpe/${PRCELL}_lper_norc.spi ${PRCELL}"  "cdl/${PRCELL}.spice ${PRCELL}" ${NETGENSETUP} lpe/${PRCELL}_lvsr.log > lpe/${PRCELL}_netgen_lvsr.log
 	cat lpe/${PRCELL}_lvsr.log | ../tech/script/checklvs ${PRCELL} --short
 
 

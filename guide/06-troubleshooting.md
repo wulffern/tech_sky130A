@@ -100,6 +100,35 @@ That check exists to stop exactly this from becoming your simulation result.
 Something in extraction lost or added a connection; fix it before trusting any
 post-layout number.
 
+**`make lpe` stops with `Segmentation fault` from netgen (`Error 139`).**
+The netlist is already written; it is the check after it that died. That
+check compares the flat extracted netlist with the hierarchical schematic,
+and netgen (seen with 1.5.305) can crash in `remove_group_tags` when it
+series and parallel merges a resistor network that is flat on one side and
+split over cells on the other. rey_pll_sky130a hit it with
+((r+r)||(r+r)) + r+r + r+r of `res_high_po` against four two-segment cells.
+If the layout has one segment per schematic segment, switch series merging
+off for that device in a setup of your own, for this check only:
+
+```tcl
+# work/netgen_lpe_setup.tcl
+source $::env(PDK_ROOT)/sky130A/libs.tech/netgen/sky130A_setup.tcl
+set dev sky130_fd_pr__res_high_po
+foreach c {circuit1 circuit2} {
+    if {[lsearch [cells list -all -$c] $dev] >= 0} {
+        property "-$c $dev" series disable
+    }
+}
+```
+
+```make
+# work/Makefile, after the include
+lpe: NETGENSETUP = netgen_lpe_setup.tcl
+```
+
+Every segment is then matched one to one, which is stricter than the PDK
+setup. `make lvs` is not affected.
+
 ## Corners
 
 **A corner name is not recognised.**

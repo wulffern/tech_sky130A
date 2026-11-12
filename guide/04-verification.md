@@ -98,7 +98,13 @@ sky130 standard cell spice into the source netlist.
 ### Tolerances
 
 `NETGENSETUP` defaults to the PDK's `sky130A_setup.tcl`. Override it to layer
-project specific tolerances on top, rather than editing the PDK.
+project specific tolerances on top, rather than editing the PDK. The check
+that ends `make lpe` and `make lper` reads the same variable. To change it for
+that check only, scope it to the target:
+
+```make
+lpe: NETGENSETUP = netgen_lpe_setup.tcl
+```
 
 ## Antenna
 
