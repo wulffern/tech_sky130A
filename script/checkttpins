@@ -1,0 +1,76 @@
+#!/usr/bin/env python3
+"""Check the ports of a TinyTapeout top level .mag against the TT tile DEF."""
+
+import os
+import re
+import sys
+
+import click
+
+HERE = os.path.dirname(os.path.realpath(__file__))
+DEFAULT_DEF = os.path.join(HERE, "..", "tt", "tt_block_1x1_pg.def")
+
+
+def read_def(fname):
+    """Return {pin: (direction, (x0, y0, x1, y1))} in magic units (5 nm)."""
+    text = open(fname).read()
+    m = re.search(r"UNITS DISTANCE MICRONS (\d+)", text)
+    scale = int(m.group(1)) // 200  # DEF units per 5 nm magic unit
+    pins = {}
+    for m in re.finditer(
+        r"- (\S+) \+ NET \S+ \+ DIRECTION (\w+).*?LAYER \w+ "
+        r"\( (-?\d+) (-?\d+) \) \( (-?\d+) (-?\d+) \).*?PLACED \( (-?\d+) (-?\d+) \)",
+        text, re.S):
+        name, direction, x0, y0, x1, y1, px, py = m.groups()
+        px, py = int(px), int(py)
+        box = tuple(v // scale for v in (px + int(x0), py + int(y0),
+                                          px + int(x1), py + int(y1)))
+        pins[name] = (direction.lower(), box)
+    return pins
+
+
+def read_mag(fname):
+    """Return {label: (direction, (x0, y0, x1, y1))} for flabels with a port."""
+    lines = open(fname).read().splitlines()
+    ports = {}
+    for i, line in enumerate(lines):
+        if not line.startswith("flabel"):
+            continue
+        t = line.split()
+        coords = [int(v) for v in t[3:7]] if t[2] == "s" else [int(v) for v in t[2:6]]
+        nxt = lines[i + 1].split() if i + 1 < len(lines) else []
+        direction = nxt[4] if len(nxt) > 4 and nxt[0] == "port" else None
+        ports[t[-1]] = (direction, tuple(coords))
+    return ports
+
+
+@click.command()
+@click.argument("mag", type=click.Path(exists=True))
+@click.option("--def", "deffile", default=DEFAULT_DEF, show_default=True,
+              type=click.Path(exists=True), help="TinyTapeout tile DEF")
+def main(mag, deffile):
+    """Check that every pin in the TT DEF exists in MAG with the same
+    name, rectangle (metal4) and direction. Exits 1 on any mismatch."""
+    pins = read_def(deffile)
+    ports = read_mag(mag)
+    bad = 0
+    for name, (direction, box) in sorted(pins.items()):
+        if name not in ports:
+            print(f"MISSING  {name}")
+            bad += 1
+            continue
+        mdir, mbox = ports[name]
+        if mbox != box:
+            print(f"POSITION {name}: def {box} mag {mbox}")
+            bad += 1
+        if mdir != direction:
+            print(f"DIR      {name}: def {direction} mag {mdir}")
+            bad += 1
+    cell = os.path.basename(mag).replace(".mag", "")
+    status = "\033[32mPINS OK  \033[0m" if bad == 0 else "\033[31mPINS FAIL\033[0m"
+    print(f"{cell:<40}\t[ {status} ] {len(pins)} pins, {bad} errors")
+    sys.exit(1 if bad else 0)
+
+
+if __name__ == "__main__":
+    main()

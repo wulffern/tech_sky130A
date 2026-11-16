@@ -108,4 +108,8 @@ converted from the IP README by
 `precheck` runs [tt_precheck.sh](tt_precheck.sh.md) against that staged
 delivery.
 
+`ttpins` is the quick version of the pin part of that check: it runs
+[checkttpins](../script/checkttpins.md) on `${CELL}.mag` directly, with no
+delivery, klayout or `tt-support-tools` needed.
+
 `clean` removes `lvs drc lpe cdl gds` and the extraction leftovers.

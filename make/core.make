@@ -30,7 +30,7 @@ PRCELL = ${PREFIX}${CELL}
 
 PDKPATH=${PDK_ROOT}/sky130A
 
-.PHONY: drc lvs lpe gds cdl xsch ant lplot precheck preflight matchports fixbbox xor diff
+.PHONY: drc lvs lpe gds cdl xsch ant lplot precheck ttpins preflight matchports fixbbox xor diff
 
 
 #----------------------------------------------------------------------------
@@ -118,6 +118,8 @@ Commands:
    cdl    Generate spice netlist from schematic for LVS
    lvs   Run Layout Versus Schematic
    drc    Run Design Rule Checks
+   ttpins Check TinyTapeout top level ports against tt/tt_block_1x1_pg.def
+          make ttpins CELL=tt_um_<name>
    doc    Use pandoc to convert README.md into README.html
    xview  Start Xschem
    xor    Compare two GDS files with klayout, writing the differences to a GDS
@@ -481,3 +483,6 @@ deliver: preflight cdl gds lvs drc kdrc ant
 
 precheck:
 	bash ../tech/make/tt_precheck.sh ${CELL} ${TAPEOUT}
+
+ttpins:
+	../tech/script/checkttpins ${LMAG}/${CELL}.mag

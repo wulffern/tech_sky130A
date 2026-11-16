@@ -7,7 +7,8 @@ structure, perl where there is a text stream to rewrite.
 They fall into three groups.
 
 **Check** — turn a tool log into a verdict:
-[checkant](checkant.md), [checkkdrc](checkkdrc.md), [checklvs](checklvs.md).
+[checkant](checkant.md), [checkkdrc](checkkdrc.md), [checklvs](checklvs.md),
+[checkttpins](checkttpins.md).
 
 **Fix** — repair a netlist or a layout the tools got wrong:
 [fixbbox](fixbbox.md), [fixlpe](fixlpe.md), [fixspi](fixspi.md),
